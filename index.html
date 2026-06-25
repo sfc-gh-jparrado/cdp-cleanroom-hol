@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOL — Composable CDP + Data Clean Room (HAVAS)</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:#121829; --panel2:#0f1422; --border:#22304d;
+    --txt:#e8eefc; --muted:#9fb0d0; --sf:#29B5E8; --pur:#8A6FE8;
+    --code:#0b1020; --ok:#37d399; --warn:#ffb454;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--sf);text-decoration:none}
+  .layout{display:flex;min-height:100vh}
+  /* Sidebar */
+  nav.side{
+    width:300px;flex:0 0 300px;background:var(--panel2);border-right:1px solid var(--border);
+    position:sticky;top:0;height:100vh;overflow-y:auto;padding:24px 16px;
+  }
+  nav.side .brand{font-weight:700;font-size:15px;letter-spacing:.3px;margin-bottom:4px;
+    background:linear-gradient(90deg,var(--sf),var(--pur));-webkit-background-clip:text;background-clip:text;color:transparent}
+  nav.side .sub{color:var(--muted);font-size:12px;margin-bottom:20px}
+  nav.side a.item{display:block;color:var(--muted);padding:7px 12px;border-radius:8px;font-size:13.5px;margin:2px 0}
+  nav.side a.item:hover{background:#172036;color:var(--txt)}
+  nav.side a.item.active{background:linear-gradient(90deg,rgba(41,181,232,.18),rgba(138,111,232,.18));color:var(--txt);border-left:3px solid var(--sf)}
+  nav.side .grp{color:#5e6f92;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;margin:18px 12px 6px}
+  /* Main */
+  main{flex:1;max-width:980px;margin:0 auto;padding:40px 48px 120px}
+  header.hero{border-bottom:1px solid var(--border);padding-bottom:24px;margin-bottom:32px}
+  header.hero h1{font-size:30px;margin:0 0 8px;background:linear-gradient(90deg,var(--sf),var(--pur));-webkit-background-clip:text;background-clip:text;color:transparent}
+  header.hero p{color:var(--muted);margin:0;font-size:15px}
+  section.part{display:none;animation:fade .25s ease}
+  section.part.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  h2{font-size:23px;margin:8px 0 6px;color:var(--txt)}
+  h2 .num{display:inline-block;min-width:34px;height:34px;line-height:34px;text-align:center;border-radius:8px;
+    background:linear-gradient(135deg,var(--sf),var(--pur));color:#04121e;font-weight:800;font-size:15px;margin-right:10px;vertical-align:middle}
+  h3{font-size:15px;color:var(--sf);margin:22px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  ul,ol{margin:8px 0 8px 4px;padding-left:22px}
+  li{margin:4px 0}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;margin-right:8px}
+  .pill.obj{background:rgba(55,211,153,.15);color:var(--ok)}
+  .pill.res{background:rgba(41,181,232,.15);color:var(--sf)}
+  .pill.gui{background:rgba(138,111,232,.15);color:var(--pur)}
+  .obj-line{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:10px 0}
+  .res-line{border-left:3px solid var(--sf);background:rgba(41,181,232,.06);padding:10px 16px;border-radius:0 8px 8px 0;margin:10px 0}
+  .gotcha{border-left:3px solid var(--warn);background:rgba(255,180,84,.07);padding:10px 16px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14px}
+  .gotcha b{color:var(--warn)}
+  .prompt{position:relative;background:var(--code);border:1px solid var(--border);border-radius:10px;margin:8px 0 4px}
+  .prompt .lbl{font-size:11px;color:var(--muted);padding:8px 14px 0;font-weight:600}
+  .prompt pre{margin:0;padding:10px 14px 14px;overflow-x:auto;font-family:"SF Mono",Menlo,Monaco,Consolas,monospace;font-size:13px;color:#cfe3ff;white-space:pre-wrap}
+  .prompt .copy{position:absolute;top:8px;right:8px;background:#1b2740;color:var(--muted);border:1px solid var(--border);
+    border-radius:7px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600}
+  .prompt .copy:hover{color:var(--txt);border-color:var(--sf)}
+  .prompt .copy.done{color:var(--ok);border-color:var(--ok)}
+  .navbtns{display:flex;justify-content:space-between;margin-top:40px;gap:12px}
+  .navbtns button{background:var(--panel);color:var(--txt);border:1px solid var(--border);border-radius:10px;padding:11px 20px;font-size:14px;cursor:pointer;font-weight:600}
+  .navbtns button:hover:not(:disabled){border-color:var(--sf);color:var(--sf)}
+  .navbtns button:disabled{opacity:.35;cursor:default}
+  .meta-grid{display:grid;grid-template-columns:1fr;gap:8px}
+  .kv{padding:6px 0;border-bottom:1px dashed var(--border)}
+  .kv b{color:var(--sf)}
+  code.inl{background:#1b2740;padding:1px 6px;border-radius:5px;font-family:"SF Mono",Menlo,monospace;font-size:12.5px;color:#cfe3ff}
+  .progress{height:4px;background:#172036;border-radius:4px;overflow:hidden;margin:14px 0 0}
+  .progress > div{height:100%;background:linear-gradient(90deg,var(--sf),var(--pur));width:0;transition:width .3s}
+  @media(max-width:840px){nav.side{display:none}main{padding:24px}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="side" id="nav"></nav>
+  <main>
+    <header class="hero">
+      <h1>HOL — Composable CDP + Data Clean Room</h1>
+      <p>Cliente <b>HAVAS</b> · de cero a app · CDP componible + Data Clean Room cross-account sobre 2 CRMs HubSpot (mundo mascotas)</p>
+      <div class="progress"><div id="bar"></div></div>
+    </header>
+    <div id="content"></div>
+    <div class="navbtns">
+      <button id="prev">← Anterior</button>
+      <button id="next">Siguiente →</button>
+    </div>
+  </main>
+</div>
+<script>
+// ---- Contenido del HOL (sin librerías externas) ----
+const parts = [
+ {id:"intro", grp:"Inicio", title:"Preámbulo", html:`
+  <h2>Preámbulo</h2>
+  <h3>Cliente</h3>
+  <div class="obj-line">HAVAS — agencia de medios/datos. Escenario: dos marcas-cliente del mundo mascotas (<b>Tienda Ceba</b>, retailer · <b>Padre de Mascotas</b>, comunidad/clínica) quieren campañas conjuntas sin intercambiar PII cruda. SE: Jorge Parrado.</div>
+  <h3>Objetivos de aprendizaje</h3>
+  <ul>
+    <li>Construir un CDP componible donde los datos viven en Snowflake (360, identidad, propensión, segmentos, lookalikes).</li>
+    <li>Aplicar gobierno: masking de PII y row access por consentimiento.</li>
+    <li>Montar un Data Clean Room cross-account y medir overlap con k-anonymity, activando sin exponer identidades.</li>
+    <li>Exponer todo en una app React (SPCS) y un agente Cortex en lenguaje natural.</li>
+  </ul>
+  <h3>Prerrequisitos</h3>
+  <ul>
+    <li>Dos cuentas Snowflake: <b>A</b> (Tienda Ceba, locator <code class="inl">HQB73140</code>, AWS_US_WEST_2) y <b>B</b> (Padre de Mascotas, locator <code class="inl">UHB57140</code>). ACCOUNTADMIN en ambas.</li>
+    <li>Data Clean Rooms instalado en ambas (<code class="inl">SAMOOHA_BY_SNOWFLAKE_LOCAL_DB</code>).</li>
+    <li>Warehouse activo (<code class="inl">BANCO_WH</code>), snow CLI, Docker y login de Google para los CSV.</li>
+  </ul>
+  <h3>Arquitectura y stack</h3>
+  <ul>
+    <li>Ingesta: 2 exports HubSpot CRM → esquema RAW de cada cuenta.</li>
+    <li>CDP: RAW → CDP → EVENTS → GOLD → SEGMENTS → GOBIERNO.</li>
+    <li>IA: ML.CLASSIFICATION (propensión), VECTOR_COSINE_SIMILARITY (lookalikes), Cortex Analyst + agente.</li>
+    <li>Clean Room: Collaboration API (SAMOOHA) cross-account A↔B sobre match_key hasheada.</li>
+    <li>App: React + D3 (Vite) en SPCS con URL pública SSO.</li>
+  </ul>
+  <h3>Pre-check cross-account</h3>
+  <p>En cada cuenta corre y anota el par <code class="inl">ORG.ACCOUNT</code> (se usa para invitar en el Clean Room):</p>
+  ${prompt("SQL","SELECT CURRENT_ORGANIZATION_NAME(), CURRENT_ACCOUNT_NAME(), CURRENT_ACCOUNT();")}
+ `},
+ {id:"p1", grp:"CDP por marca", title:"1 · Setup de bases y esquemas", html:`
+  <h2><span class="num">1</span>Setup de bases y esquemas</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Crear la base y los 7 esquemas en cada cuenta.</div>
+  ${prompt("Prompt CoCo — Cuenta A","Crea la base TIENDA_CEBA_CDP con los esquemas RAW, CDP, EVENTS, GOLD, SEGMENTS, GOBIERNO y APP. Usa el warehouse BANCO_WH. Solo DDL, idempotente (CREATE ... IF NOT EXISTS).")}
+  ${prompt("Prompt CoCo — Cuenta B","Crea la base PADRE_MASCOTAS_CDP con los esquemas RAW, CDP, EVENTS, GOLD, SEGMENTS, GOBIERNO y APP. Usa el warehouse BANCO_WH. Solo DDL, idempotente (CREATE ... IF NOT EXISTS).")}
+  <p><span class="pill gui">GUI</span>Snowsight → Data → + Database.</p>
+  <div class="res-line"><span class="pill res">RESULTADO</span>Ambas bases con sus 7 esquemas.</div>
+ `},
+ {id:"p2", grp:"CDP por marca", title:"2 · Ingesta de los CSV de HubSpot", html:`
+  <h2><span class="num">2</span>Ingesta de los CSV de HubSpot</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Cargar el CRM de cada marca al esquema RAW.</div>
+  <h3>Descarga (login Google)</h3>
+  <ul>
+    <li>Tienda Ceba: <a href="https://drive.google.com/file/d/1knpetUO-SMy6udX67iZh1-EB4V8ZNizZ/view" target="_blank">CSV</a></li>
+    <li>Padre de Mascotas: <a href="https://drive.google.com/file/d/1q8mfSLSK7dVuAzzKoWkHy3Cex6JDh2E2/view" target="_blank">CSV</a></li>
+  </ul>
+  <p>Guárdalos en <code class="inl">/Users/jparrado/cdp-cleanroom-Havas/data/</code>.</p>
+  <h3><span class="pill gui">GUI</span>Carga (recomendado)</h3>
+  <ol>
+    <li>Snowsight (Cuenta A) → Data → Add Data → Load data into a Table.</li>
+    <li>CSV de Tienda Ceba → destino <code class="inl">TIENDA_CEBA_CDP.RAW</code> → tabla nueva <code class="inl">HUBSPOT_CONTACTS</code>.</li>
+    <li>Asistente: Header = first line, inferir tipos, On error = Continue. Carga.</li>
+    <li>Repite en Cuenta B → <code class="inl">PADRE_MASCOTAS_CDP.RAW.HUBSPOT_CONTACTS</code>.</li>
+  </ol>
+  ${prompt("Prompt CoCo — perfilado","Describe RAW.HUBSPOT_CONTACTS: lista columnas y tipos, cuenta filas, y muéstrame 5 filas de ejemplo. Identifica qué columnas sirven como identificadores (email, teléfono, nombre, record id) y cuáles como atributos (ciudad, lifecycle stage, fecha de creación). Resume hallazgos de calidad (nulos, duplicados de email).")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>RAW.HUBSPOT_CONTACTS poblada en cada cuenta + mapa de columnas.</div>
+  <div class="gotcha"><b>Gotcha:</b> los exports HubSpot traen columnas con espacios/acentos; se normalizan a SNAKE_CASE en la Parte 3. No renombres a mano.</div>
+ `},
+ {id:"p3", grp:"CDP por marca", title:"3 · Customer 360", html:`
+  <h2><span class="num">3</span>Customer 360</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Una fila limpia por cliente, deduplicada.</div>
+  ${prompt("Prompt CoCo","Sobre RAW.HUBSPOT_CONTACTS crea CDP.CUSTOMER_360 como vista/tabla limpia:\n- normaliza nombres de columna a snake_case\n- email en minúscula y trim; teléfono solo dígitos\n- una fila por cliente, deduplicando por email (conserva el registro más reciente por fecha de creación)\n- columnas estándar: customer_id, email, telefono, nombre, ciudad, lifecycle_stage, fecha_creacion\nMaterialízala como tabla GOLD.CUSTOMER_360 y dime el conteo final de clientes únicos.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>GOLD.CUSTOMER_360 deduplicada con su conteo.</div>
+ `},
+ {id:"p4", grp:"CDP por marca", title:"4 · Enriquecimiento sintético", html:`
+  <h2><span class="num">4</span>Enriquecimiento sintético de comportamiento</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Generar señal aprendible (HubSpot solo trae contactos).</div>
+  ${prompt("Prompt CoCo","Para cada cliente de GOLD.CUSTOMER_360 asigna un engagement latente (0-1) determinístico por hash del customer_id. Con ese engagement genera datos sintéticos coherentes:\n- EVENTS.WEB_EVENTS: nº de sesiones proporcional a engagement (usa GENERATOR + filtro seq<n; IDs contiguos con ROW_NUMBER, NO SEQ4 sobre cross-join)\n- EVENTS.PURCHASES: probabilidad de compra y ticket proporcional a engagement (AOV mascotas ~ $35)\n- EVENTS.AD_EXPOSURE: impresiones y clics, CTR proporcional a engagement\nAsegúrate de que el target \"compró en últimos 30 días\" sea predecible a partir de features ANTERIORES a esa ventana (sin fuga temporal).")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>3 tablas de eventos con señal.</div>
+  <div class="gotcha"><b>Gotcha:</b> si features y target son aleatorios independientes, el modelo colapsa al base rate. El engagement latente crea la señal.</div>
+ `},
+ {id:"p5", grp:"CDP por marca", title:"5 · Identity Resolution", html:`
+  <h2><span class="num">5</span>Identity Resolution</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Resolver identidades a un person_id canónico.</div>
+  ${prompt("Prompt CoCo","Construye CDP.IDENTITY_GRAPH: nodos de identidad enlazados por email, teléfono y nombre normalizado. Resuelve a un person_id canónico por componente conexo. Crea GOLD.IDENTITY_SUMMARY con person_id, nº de identificadores fusionados y canales. Dame ejemplos de fusiones.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>Grafo de identidad + resumen (alimenta la pantalla force-directed de la app).</div>
+ `},
+ {id:"p6", grp:"CDP por marca", title:"6 · Propensión (ML)", html:`
+  <h2><span class="num">6</span>Modelo de propensión (ML)</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Puntuar propensión a comprar y tier por cliente.</div>
+  ${prompt("Prompt CoCo","Entrena GOLD.MODELO_PROPENSION con SNOWFLAKE.ML.CLASSIFICATION. Target: compró en últimos 30 días. Features: recencia, frecuencia, sesiones, CTR, ticket promedio (todas previas a la ventana de 30 días). Genera GOLD.CUSTOMER_SCORES con probabilidad clase 1 y tier Alto/Medio/Bajo. Reporta F1 y la separación de tiers.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>Scores por cliente + tiers separados.</div>
+  <div class="gotcha"><b>Gotcha !PREDICT:</b> las llaves del OBJECT_CONSTRUCT deben ir en MAYÚSCULA e idénticas al nombre de columna; si no, las features entran NULL y todos caen en un tier. Probabilidad = <code class="inl">pred.p:probability:"1"::FLOAT</code>.</div>
+ `},
+ {id:"p7", grp:"CDP por marca", title:"7 · Segmentación + ROI", html:`
+  <h2><span class="num">7</span>Segmentación + ROI</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Materializar segmentos y simular ROI de activación.</div>
+  ${prompt("Prompt CoCo","Crea SEGMENTS.SP_CREAR_SEGMENTO(nombre, descripcion, predicado) que materialice miembros desde un WHERE sobre GOLD.CUSTOMER_360 enriquecida con scores. Crea SEGMENTS.SP_ACTIVAR_SEGMENTO(id, destino) que respete consentimiento y simule ROI (paid ~$9.50/persona, email ~$0.50/persona, AOV mascotas ~$35, conversión = propensión * factor). Crea un segmento de ejemplo \"Dueños alta propensión\" y actívalo.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>SPs de segmentación + un segmento activado con ROI.</div>
+  <div class="gotcha"><b>Gotcha:</b> envuelve el cuerpo del procedimiento en $$...$$. En INSERT...VALUES no uses aritmética sobre variables; precalcula en una variable.</div>
+ `},
+ {id:"p8", grp:"CDP por marca", title:"8 · Lookalikes", html:`
+  <h2><span class="num">8</span>Lookalikes</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Expandir un segmento por similitud vectorial.</div>
+  ${prompt("Prompt CoCo","Crea GOLD.CUSTOMER_VECTOR con z-scores de las features convertidos a VECTOR(FLOAT, 10). Crea GOLD.SP_LOOKALIKE(seg_id, N) que devuelva los N clientes más similares al centroide del segmento usando VECTOR_COSINE_SIMILARITY. Demuéstralo sobre el segmento de alta propensión y compara la propensión media del lookalike vs la base.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>Lookalikes con propensión superior a la base.</div>
+ `},
+ {id:"p9", grp:"CDP por marca", title:"9 · Vista semántica + Agente", html:`
+  <h2><span class="num">9</span>Vista semántica + Agente Cortex</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Habilitar preguntas en lenguaje natural sobre el CDP.</div>
+  ${prompt("Prompt CoCo — vista semántica","Crea APP.SV_CDP (semantic view en español) sobre GOLD.CUSTOMER_360 + scores: dimensiones (ciudad, lifecycle_stage, tier, género si existe), métricas ratio (tasa_consentimiento, pct_alta_propension, clientes_activables). Pon valores válidos en los COMMENT para que Analyst mapee literales. Valídala con una pregunta de ejemplo.")}
+  ${prompt("Prompt CoCo — agente","Crea un agente Cortex (SNOWFLAKE_INTELLIGENCE.AGENTS.CDP_AGENT_<MARCA>) que use SV_CDP como herramienta Analyst + data_to_chart, responda en español, con 3 preguntas sugeridas de negocio.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>Vista semántica validada + agente conversacional.</div>
+  <div class="gotcha"><b>Gotcha:</b> en CREATE SEMANTIC VIEW el orden es obligatorio TABLES, FACTS, DIMENSIONS, METRICS. Sintaxis: <code class="inl">tabla.&lt;nombre_logico&gt; AS &lt;columna_o_expr&gt;</code>.</div>
+ `},
+ {id:"p10", grp:"Gobierno", title:"10 · Gobierno (masking + consentimiento)", html:`
+  <h2><span class="num">10</span>Gobierno (masking + consentimiento)</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Proteger PII y respetar consentimiento por fila.</div>
+  ${prompt("Prompt CoCo","En GOBIERNO crea: masking policies para email, teléfono y nombre (idempotentes); una row access policy de consentimiento (no-admin solo ve consent_marketing=TRUE). Aplica masking a GOLD.CUSTOMER_360. Crea roles CDP_ADMIN / CDP_ANALISTA y otórgalos a jparrado. Demuestra el masking con USE SECONDARY ROLES NONE.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>PII enmascarada + consentimiento aplicado por fila.</div>
+  <div class="gotcha"><b>Gotcha:</b> la sesión usa SECONDARY_ROLES=ALL; si el rol admin está concedido, las políticas parecen no aplicar. Valida con <code class="inl">USE SECONDARY ROLES NONE</code>.</div>
+ `},
+ {id:"p11", grp:"Clean Room", title:"11 · Data Clean Room cross-account", html:`
+  <h2><span class="num">11</span>Data Clean Room cross-account</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>A y B encuentran clientes en común y activan sin compartir PII. Usa el skill <code class="inl">data-cleanrooms</code> de CoCo.</div>
+  ${prompt("Prompt CoCo — verificación + RBAC (A y B)","Verifica que Data Clean Rooms esté instalado (SHOW DATABASES LIKE 'SAMOOHA_BY_SNOWFLAKE_LOCAL_DB%'). Con ACCOUNTADMIN, otorga al rol CDP_ADMIN los privilegios de cuenta necesarios para crear/ver colaboraciones, registrar offerings y ejecutar análisis. Lista los privilegios otorgados.")}
+  ${prompt("Prompt CoCo — audiencia NO-PII (cada cuenta)","Crea GOBIERNO.AUDIENCIA_CLEANROOM: una fila por cliente con SHA2(email_normalizado) AS match_key, más atributos NO identificables (tier de propensión, ciudad, lifecycle_stage, flag consentimiento). Sin email/teléfono/nombre en claro. Esta es la tabla que ofreceré al clean room.")}
+  ${prompt("Prompt CoCo — crear colaboración (Cuenta A)","Usando el skill data-cleanrooms, crea una colaboración cross-account llamada \"MASCOTAS_OVERLAP\" donde Cuenta A (esta) es Owner + Data Provider + Analysis Runner y Cuenta B (ORG.ACCOUNT_B) es Data Provider. Confírmame el spec antes de inicializar.")}
+  ${prompt("Prompt CoCo — unirse (Cuenta B)","Usando data-cleanrooms, revisa las invitaciones a colaboraciones y únete a \"MASCOTAS_OVERLAP\". Muéstrame el detalle antes de aceptar.")}
+  ${prompt("Prompt CoCo — registrar offerings (A y B)","Usando data-cleanrooms, registra GOBIERNO.AUDIENCIA_CLEANROOM como data offering en \"MASCOTAS_OVERLAP\" con join key = match_key. En la cuenta runner (A), enlaza ambos offerings.")}
+  ${prompt("Prompt CoCo — overlap + activación (Cuenta A runner)","Usando data-cleanrooms, ejecuta el template de \"standard audience overlap\" entre la audiencia de A y la de B sobre match_key, con tamaño mínimo de grupo (k-anonymity) = 25. Luego ejecuta \"audience overlap activation\" para exportar a A el segmento solapado de alta propensión (sin revelar identidades de B). Resume: nº de overlap, % sobre cada base, y lift de propensión del overlap vs base.")}
+  <p><span class="pill gui">GUI</span>Snowsight → Data Clean Rooms → Create → añade Cuenta B como invitada.</p>
+  <div class="res-line"><span class="pill res">RESULTADO</span>Overlap agregado + segmento activado, sin que A vea los emails de B. Mensaje: campañas co-marca sobre clientes compartidos de alta propensión sin que ninguna marca entregue su CRM.</div>
+  <div class="gotcha"><b>Gotchas:</b> si aparece ActivationDestinationsNotFoundException, configura activation_destinations en el runner. Si un procedimiento exige roles secundarios off: USE SECONDARY ROLES NONE antes y ALL después. Nunca consultes tablas internas de SAMOOHA; solo procedimientos CALL.</div>
+ `},
+ {id:"p12", grp:"App", title:"12 · App React + SPCS", html:`
+  <h2><span class="num">12</span>App React + SPCS</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Visualizar CDP + Clean Room en una app con URL pública SSO.</div>
+  ${prompt("Prompt CoCo — snapshots","Exporta a app/public/data/ los snapshots JSON que necesita la app:\n- kpis.json, tiers.json (de GOLD.CUSTOMER_SCORES)\n- customers.json: muestra de 8000 clientes con score y tier\n- identity.json: aristas para el grafo (ARRAY PLANO)\n- overlap.json: resultado del clean room (overlap, %, lift)\n- roi.json: VW_ROI comparando Masivo vs Dirigido-CDP\nUsa snow sql --format json -q \"...\" 1>archivo (NO uses USE WAREHOUSE en el -q).")}
+  ${prompt("Prompt CoCo — scaffold","En app/ crea un proyecto Vite + React 18 + d3 v7 con tema Snowflake oscuro (#29B5E8/#8A6FE8, glassmorphism). 6 pantallas que leen ./data/*.json:\n1) Resumen (KPIs animados + tiers)\n2) Constructor de segmentos (filtros en memoria, gauge + scatter canvas)\n3) Identity Resolution (grafo force-directed)\n4) Clean Room Overlap (overlap A∩B + k-anonymity)\n5) Activación / ROI (barras Masivo vs Dirigido-CDP)\n6) Agente (embebe el agente CDP)\nSPA estática, sin backend.")}
+  ${prompt("Prompt CoCo — imagen","Crea Dockerfile (nginx:1.27-alpine sirviendo dist en :8080). Crea repo de imágenes TIENDA_CEBA_CDP.APP.IMAGES y compute pool CDP_POOL (CPU_X64_XS). Dame los comandos: npm run build → docker build --platform linux/amd64 → snow spcs image-registry login → docker push.")}
+  ${prompt("Prompt CoCo — servicio","Crea el servicio TIENDA_CEBA_CDP.APP.CDP_APP_SERVICE desde especificación (FROM SPECIFICATION, reusar el mismo spec en redeploys), expón endpoint público y dame la URL con SSO.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>URL pública <code class="inl">https://&lt;hash&gt;-sfsenorthamerica-demo-jparrado.snowflakecomputing.app</code></div>
+  <div class="gotcha"><b>Gotcha App.jsx:</b> los snapshots de array (customers.json, identity.json) deben ser arrays planos [...], NO {"identity":[...]}; si se envuelven, d3.group revienta y la app queda en blanco. El hash de la URL cambia si recreas el servicio con un spec distinto; reusa el mismo spec.</div>
+ `},
+ {id:"p13", grp:"Cierre", title:"13 · Cleanup", html:`
+  <h2><span class="num">13</span>Cleanup</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Apagar consumo al terminar el HOL.</div>
+  ${prompt("Prompt CoCo","Suspende y elimina los recursos de la demo: ALTER SERVICE ... SUSPEND y DROP SERVICE CDP_APP_SERVICE; DROP COMPUTE POOL CDP_POOL; DROP IMAGE REPOSITORY IMAGES; en cada cuenta, deja la colaboración del clean room (leave/teardown vía data-cleanrooms) y, si fue desechable, DROP DATABASE TIENDA_CEBA_CDP / PADRE_MASCOTAS_CDP. Confírmame qué se va a borrar antes de ejecutar.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>Servicios, compute pool y colaboración eliminados; sin consumo residual.</div>
+ `},
+ {id:"narr", grp:"Cierre", title:"Narrativa de presentación", html:`
+  <h2>Guion de presentación (narrativa)</h2>
+  <ol>
+    <li><b>Problema:</b> dos marcas de mascotas con su CRM en HubSpot quieren campañas conjuntas sin intercambiar PII.</li>
+    <li><b>CDP componible (Partes 3-9):</b> cada marca activa sus datos en su propia cuenta — sin moverlos a una plataforma externa.</li>
+    <li><b>Gobierno (Parte 10):</b> masking + consentimiento por fila = privacidad por diseño.</li>
+    <li><b>Clean Room (Parte 11):</b> A y B descubren su overlap con k-anonymity; nadie ve los emails del otro.</li>
+    <li><b>Activación + ROI:</b> campaña co-marca solo sobre el overlap de alta propensión → mayor ROAS, menor CPA vs masivo.</li>
+    <li><b>App + Agente (Parte 12):</b> cierre visual e interactivo en lenguaje natural.</li>
+  </ol>
+  <h3>Apéndice — Gotchas heredados</h3>
+  <ul>
+    <li>snow sql -f se detiene en el primer error DDL → drops tolerantes en <code class="inl">EXECUTE IMMEDIATE $$ BEGIN ... EXCEPTION WHEN OTHER THEN NULL; END $$;</code>.</li>
+    <li>Export JSON: no uses USE WAREHOUSE dentro de -q; redirige con <code class="inl">1>archivo</code>.</li>
+    <li>GENERATOR + ROW_NUMBER para datos por-cliente: genera n proporcional a engagement y filtra WHERE seq&lt;n.</li>
+    <li>Vista semántica: pon literales válidos en los COMMENT para que Cortex Analyst los mapee.</li>
+  </ul>
+ `}
+];
+
+function prompt(lbl, code){
+  const esc = code.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return `<div class="prompt"><div class="lbl">${lbl}</div><button class="copy">Copiar</button><pre>${esc}</pre></div>`;
+}
+
+// Render nav
+const nav = document.getElementById("nav");
+nav.innerHTML = `<div class="brand">HOL CDP + Clean Room</div><div class="sub">HAVAS · de cero a app</div>`;
+let lastGrp = "";
+parts.forEach((p,i)=>{
+  if(p.grp!==lastGrp){ const g=document.createElement("div"); g.className="grp"; g.textContent=p.grp; nav.appendChild(g); lastGrp=p.grp; }
+  const a=document.createElement("a"); a.className="item"; a.href="#"+p.id; a.textContent=p.title; a.dataset.idx=i;
+  a.onclick=(e)=>{e.preventDefault(); go(i);};
+  nav.appendChild(a);
+});
+
+const content=document.getElementById("content");
+const bar=document.getElementById("bar");
+let cur=0;
+
+function go(i){
+  cur=Math.max(0,Math.min(parts.length-1,i));
+  content.innerHTML=`<section class="part active">${parts[cur].html}</section>`;
+  document.querySelectorAll("nav .item").forEach(a=>a.classList.toggle("active", +a.dataset.idx===cur));
+  bar.style.width=((cur+1)/parts.length*100)+"%";
+  document.getElementById("prev").disabled = cur===0;
+  document.getElementById("next").disabled = cur===parts.length-1;
+  // copy buttons
+  content.querySelectorAll(".prompt .copy").forEach(btn=>{
+    btn.onclick=()=>{
+      const txt=btn.parentElement.querySelector("pre").innerText;
+      navigator.clipboard.writeText(txt).then(()=>{
+        btn.textContent="Copiado ✓"; btn.classList.add("done");
+        setTimeout(()=>{btn.textContent="Copiar"; btn.classList.remove("done");},1500);
+      }).catch(()=>{btn.textContent="Error";});
+    };
+  });
+  window.scrollTo({top:0,behavior:"smooth"});
+  if(location.hash!=="#"+parts[cur].id) history.replaceState(null,"","#"+parts[cur].id);
+}
+document.getElementById("prev").onclick=()=>go(cur-1);
+document.getElementById("next").onclick=()=>go(cur+1);
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="ArrowLeft") go(cur-1);
+  if(e.key==="ArrowRight") go(cur+1);
+});
+// initial from hash
+const h=location.hash.slice(1);
+const start=parts.findIndex(p=>p.id===h);
+go(start>=0?start:0);
+</script>
+</body>
+</html>
