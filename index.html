@@ -127,7 +127,7 @@ const parts = [
       </ul>
     </li>
     <li>Data Clean Rooms instalado en ambas (<code class="inl">SAMOOHA_BY_SNOWFLAKE_LOCAL_DB</code>).</li>
-    <li>Warehouse activo (<code class="inl">BANCO_WH</code>), snow CLI, Docker y login de Google para los CSV.</li>
+    <li>snow CLI, Docker y login de Google para los CSV. <i>El warehouse dedicado de la demo se crea en la Parte 1 — no se reutiliza ninguno existente.</i></li>
   </ul>
   <h3>Arquitectura y stack</h3>
   <ul>
@@ -143,11 +143,15 @@ const parts = [
  `},
  {id:"p1", grp:"CDP por marca", title:"1 · Setup de bases y esquemas", html:`
   <h2><span class="num">1</span>Setup de bases y esquemas</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Crear la base y los 7 esquemas en cada cuenta.</div>
-  ${prompt("Prompt CoCo — Cuenta A","Crea la base TIENDA_CEBA_CDP con los esquemas RAW, CDP, EVENTS, GOLD, SEGMENTS, GOBIERNO y APP. Usa el warehouse BANCO_WH. Solo DDL, idempotente (CREATE ... IF NOT EXISTS).")}
-  ${prompt("Prompt CoCo — Cuenta B","Crea la base PADRE_MASCOTAS_CDP con los esquemas RAW, CDP, EVENTS, GOLD, SEGMENTS, GOBIERNO y APP. Usa el warehouse BANCO_WH. Solo DDL, idempotente (CREATE ... IF NOT EXISTS).")}
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Crear el warehouse dedicado de la demo, la base y los 7 esquemas en cada cuenta.</div>
+  <h3>Warehouse dedicado</h3>
+  <p>Corre esto <b>en ambas cuentas</b>. La demo usa su propio warehouse <code class="inl">HOL_MASCOTAS_WH</code> — no reutilizamos ninguno existente:</p>
+  ${prompt("SQL — en cada cuenta",`CREATE WAREHOUSE IF NOT EXISTS HOL_MASCOTAS_WH\n  WAREHOUSE_SIZE = 'XSMALL'\n  AUTO_SUSPEND = 60\n  AUTO_RESUME = TRUE\n  INITIALLY_SUSPENDED = TRUE\n  COMMENT = 'HOL CDP + Clean Room (HAVAS) - warehouse dedicado';\n\nUSE WAREHOUSE HOL_MASCOTAS_WH;`)}
+  <h3>Bases y esquemas</h3>
+  ${prompt("Prompt CoCo — Cuenta A","Crea la base TIENDA_CEBA_CDP con los esquemas RAW, CDP, EVENTS, GOLD, SEGMENTS, GOBIERNO y APP. Usa el warehouse HOL_MASCOTAS_WH. Solo DDL, idempotente (CREATE ... IF NOT EXISTS).")}
+  ${prompt("Prompt CoCo — Cuenta B","Crea la base PADRE_MASCOTAS_CDP con los esquemas RAW, CDP, EVENTS, GOLD, SEGMENTS, GOBIERNO y APP. Usa el warehouse HOL_MASCOTAS_WH. Solo DDL, idempotente (CREATE ... IF NOT EXISTS).")}
   <p><span class="pill gui">GUI</span>Snowsight → Data → + Database.</p>
-  <div class="res-line"><span class="pill res">RESULTADO</span>Ambas bases con sus 7 esquemas.</div>
+  <div class="res-line"><span class="pill res">RESULTADO</span>Warehouse <code class="inl">HOL_MASCOTAS_WH</code> activo y ambas bases con sus 7 esquemas, en cada cuenta.</div>
  `},
  {id:"p2", grp:"CDP por marca", title:"2 · Ingesta de los CSV de HubSpot", html:`
   <h2><span class="num">2</span>Ingesta de los CSV de HubSpot</h2>
