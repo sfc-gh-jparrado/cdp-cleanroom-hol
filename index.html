@@ -51,6 +51,9 @@
   h3{font-family:var(--font-h);font-size:13px;color:var(--sf-link);margin:22px 0 6px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
   ul,ol{margin:8px 0 8px 4px;padding-left:22px}
   li{margin:4px 0}
+  li ul{margin:6px 0 8px;list-style:none;padding-left:14px}
+  li ul li{position:relative;padding-left:14px;color:var(--body)}
+  li ul li:before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--sf)}
   .pill{display:inline-block;font-family:var(--font-h);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-right:8px}
   .pill.obj{background:#E3F6E8;color:var(--green)}
   .pill.res{background:var(--highlight);color:#0E6F9A}
@@ -117,7 +120,12 @@ const parts = [
   </ul>
   <h3>Prerrequisitos</h3>
   <ul>
-    <li>Dos cuentas Snowflake: <b>A</b> (Tienda Ceba, locator <code class="inl">HQB73140</code>, AWS_US_WEST_2) y <b>B</b> (Padre de Mascotas, locator <code class="inl">UHB57140</code>). ACCOUNTADMIN en ambas.</li>
+    <li>Dos cuentas Snowflake con <code class="inl">ACCOUNTADMIN</code>:
+      <ul>
+        <li><b>Cuenta A</b> — Tienda Ceba · locator <code class="inl">HQB73140</code> · <code class="inl">AWS_US_WEST_2</code></li>
+        <li><b>Cuenta B</b> — Padre de Mascotas · locator <code class="inl">UHB57140</code></li>
+      </ul>
+    </li>
     <li>Data Clean Rooms instalado en ambas (<code class="inl">SAMOOHA_BY_SNOWFLAKE_LOCAL_DB</code>).</li>
     <li>Warehouse activo (<code class="inl">BANCO_WH</code>), snow CLI, Docker y login de Google para los CSV.</li>
   </ul>
