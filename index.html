@@ -39,6 +39,8 @@
   header.hero .hero-logos img.sf{height:30px}
   header.hero .hero-logos .divider{width:1px;height:28px;background:rgba(255,255,255,.3)}
   header.hero .hero-logos img.cli{height:20px;filter:brightness(0) invert(1);opacity:.95}
+  header.hero .hero-author{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14);font-size:13px;color:rgba(255,255,255,.72)}
+  header.hero .hero-author b{color:#fff;font-family:var(--font-h);font-weight:700}
   header.hero h1{font-family:var(--font-h);font-size:30px;font-weight:800;letter-spacing:-.01em;margin:0 0 8px;color:#fff}
   header.hero p{color:#cfe0ea;margin:0;font-size:15px}
   header.hero p b{color:var(--sf)}
@@ -95,6 +97,7 @@
       <h1>HOL — Composable CDP + Data Clean Room</h1>
       <p>De cero a app · composable CDP + Data Clean Room cross-account sobre 2 CRMs HubSpot (mundo mascotas)</p>
       <div class="progress"><div id="bar"></div></div>
+      <div class="hero-author"><b>Autor: Jorge Parrado</b> · Senior Solution Engineer</div>
     </header>
     <div id="content"></div>
     <div class="navbtns">
@@ -110,7 +113,6 @@ const parts = [
   <h2>Preámbulo</h2>
   <h3>Cliente</h3>
   <div class="obj-line"><b>HAVAS</b> — agencia de medios/datos. <b>Escenario:</b> dos marcas-cliente del mundo mascotas — <b>Tienda Ceba</b> (retailer) y <b>Padre de Mascotas</b> (comunidad/clínica) — buscan campañas conjuntas sin intercambiar PII cruda.</div>
-  <p class="byline"><span class="who">Autor: Jorge Parrado</span><span class="role">Senior Solution Engineer</span></p>
   <h3>Objetivos de aprendizaje</h3>
   <ul>
     <li>Construir un composable CDP donde los datos viven en Snowflake (360, identidad, propensión, segmentos, lookalikes).</li>
