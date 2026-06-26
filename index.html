@@ -143,7 +143,7 @@ const parts = [
   <h3>Arquitectura y stack</h3>
   <ul>
     <li>Ingesta: export crudo de la Marca A (tabla fuente) → RAW; la Marca B llega pre-lista.</li>
-    <li>CDP: RAW → CDP → EVENTS → GOLD → SEGMENTS → GOBIERNO.</li>
+    <li>CDP: RAW → EVENTS → GOLD → SEGMENTS → GOBIERNO → APP.</li>
     <li>IA: ML.CLASSIFICATION (propensión), VECTOR_COSINE_SIMILARITY (lookalikes), Cortex Analyst + agente.</li>
     <li>Clean Room: Collaboration API (SAMOOHA) cross-account A↔B sobre HASHED_EMAIL (correo hasheado SHA-256).</li>
     <li>App: React + D3 (Vite) en SPCS con URL pública SSO.</li>
@@ -182,11 +182,11 @@ const parts = [
   <h3>Qué crea cada paso</h3>
   <table style="width:100%;border-collapse:collapse;font-size:13px">
     <tr style="background:var(--highlight)"><th style="text-align:left;padding:7px 10px;border:1px solid var(--border);width:13%">Paso</th><th style="text-align:left;padding:7px 10px;border:1px solid var(--border);width:32%">Qué crea</th><th style="text-align:left;padding:7px 10px;border:1px solid var(--border)">Qué se hace y para qué</th></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">1 Setup</td><td style="padding:6px 10px;border:1px solid var(--border)">Warehouse + base + 7 esquemas (A)</td><td style="padding:6px 10px;border:1px solid var(--border)">Prepara el contenedor (cómputo + esquemas) donde vivirá el CDP.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">1 Setup</td><td style="padding:6px 10px;border:1px solid var(--border)">Warehouse + base + 6 esquemas (A)</td><td style="padding:6px 10px;border:1px solid var(--border)">Prepara el contenedor (cómputo + esquemas) donde vivirá el CDP.</td></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">2 Ingesta</td><td style="padding:6px 10px;border:1px solid var(--border)">RAW.HUBSPOT_CONTACTS (~512k crudas)</td><td style="padding:6px 10px;border:1px solid var(--border)">Trae el export crudo del CRM tal cual (con duplicados) al lago de datos.</td></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">3 Customer 360</td><td style="padding:6px 10px;border:1px solid var(--border)">GOLD.CUSTOMER_360 (500k limpios)</td><td style="padding:6px 10px;border:1px solid var(--border)">Limpia y unifica: una sola ficha por cliente, conservando el dato más reciente.</td></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">4 Enriquecimiento</td><td style="padding:6px 10px;border:1px solid var(--border)">EVENTS: WEB_EVENTS / PURCHASES / AD_EXPOSURE</td><td style="padding:6px 10px;border:1px solid var(--border)">Agrega comportamiento (navegación, compras, anuncios) para poder predecir.</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">5 Identity</td><td style="padding:6px 10px;border:1px solid var(--border)">CDP.IDENTITY_GRAPH + GOLD.IDENTITY_SUMMARY</td><td style="padding:6px 10px;border:1px solid var(--border)">Detecta qué registros distintos son la misma persona (mismo teléfono).</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">5 Identity</td><td style="padding:6px 10px;border:1px solid var(--border)">GOLD.IDENTITY_GRAPH + GOLD.IDENTITY_SUMMARY</td><td style="padding:6px 10px;border:1px solid var(--border)">Detecta qué registros distintos son la misma persona (mismo teléfono).</td></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">6 Propensión</td><td style="padding:6px 10px;border:1px solid var(--border)">MODELO_PROPENSION + CUSTOMER_SCORES</td><td style="padding:6px 10px;border:1px solid var(--border)">Modelo ML que puntúa quién es más propenso a comprar (tier Alto/Medio/Bajo).</td></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">7 Segmentación</td><td style="padding:6px 10px;border:1px solid var(--border)">SEGMENTS (SPs, segmento, ROI) + lookalikes</td><td style="padding:6px 10px;border:1px solid var(--border)">Crea audiencias, simula su ROI y las expande con clientes similares (lookalikes).</td></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">8 Semántica</td><td style="padding:6px 10px;border:1px solid var(--border)">APP.SV_CDP + Agente Cortex</td><td style="padding:6px 10px;border:1px solid var(--border)">Permite preguntar al CDP en lenguaje natural (español), con respuestas y gráficos.</td></tr>
@@ -203,9 +203,9 @@ const parts = [
   <p>Corre esto <b>en ambas cuentas</b>. La demo usa su propio warehouse <code class="inl">HOL_MASCOTAS_WH</code> — no reutilizamos ninguno existente:</p>
   ${prompt("SQL — en cada cuenta",`CREATE WAREHOUSE IF NOT EXISTS HOL_MASCOTAS_WH\n  WAREHOUSE_SIZE = 'XSMALL'\n  AUTO_SUSPEND = 60\n  AUTO_RESUME = TRUE\n  INITIALLY_SUSPENDED = TRUE\n  COMMENT = 'HOL CDP + Clean Room (HAVAS) - warehouse dedicado';\n\nUSE WAREHOUSE HOL_MASCOTAS_WH;`)}
   <h3>Bases y esquemas</h3>
-  ${prompt("Prompt CoCo — Cuenta A","Crea la base TIENDA_CEBA_CDP con los esquemas RAW, CDP, EVENTS, GOLD, SEGMENTS, GOBIERNO y APP. Usa el warehouse HOL_MASCOTAS_WH. Solo DDL, idempotente (CREATE ... IF NOT EXISTS).")}
+  ${prompt("Prompt CoCo — Cuenta A","Crea la base TIENDA_CEBA_CDP con los esquemas RAW, EVENTS, GOLD, SEGMENTS, GOBIERNO y APP. Usa el warehouse HOL_MASCOTAS_WH. Solo DDL, idempotente (CREATE ... IF NOT EXISTS).")}
   <p><span class="pill gui">GUI</span>Snowsight → Data → + Database.</p>
-  <div class="res-line"><span class="pill res">RESULTADO</span>Warehouse <code class="inl">HOL_MASCOTAS_WH</code> activo en ambas cuentas y la base de la Marca A con sus 7 esquemas. <i>La base mínima de B se crea en su propio paso (antes del Clean Room).</i></div>
+  <div class="res-line"><span class="pill res">RESULTADO</span>Warehouse <code class="inl">HOL_MASCOTAS_WH</code> activo en ambas cuentas y la base de la Marca A con sus 6 esquemas. <i>La base mínima de B se crea en su propio paso (antes del Clean Room).</i></div>
  `},
  {id:"p2", grp:"CDP · Marca A", title:"2 · Ingesta del CRM (tabla fuente)", html:`
   <h2><span class="num">2</span>Ingesta del CRM de HubSpot</h2>
@@ -237,7 +237,7 @@ const parts = [
   <h2><span class="num">5</span>Identity Resolution</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Resolver identidades a un person_id canónico.</div>
   <div class="biz"><span class="lbl">PARA NEGOCIO</span>Unificamos registros que son la misma persona (mismo teléfono) para no contar ni contactar dos veces al mismo cliente.</div>
-  ${prompt("Prompt CoCo","Construye CDP.IDENTITY_GRAPH resolviendo a un person_id canónico: fusiona clientes que comparten teléfono o cédula (el person_id = el menor customer_id del grupo). NO fusiones por nombre (alta cardinalidad → componentes gigantes). Crea GOLD.IDENTITY_SUMMARY con person_id, nº de customers fusionados, nº de identificadores y canales (de WEB_EVENTS). Dame ejemplos de fusiones.")}
+  ${prompt("Prompt CoCo","Construye GOLD.IDENTITY_GRAPH resolviendo a un person_id canónico: fusiona clientes que comparten teléfono o cédula (el person_id = el menor customer_id del grupo). NO fusiones por nombre (alta cardinalidad → componentes gigantes). Crea GOLD.IDENTITY_SUMMARY con person_id, nº de customers fusionados, nº de identificadores y canales (de WEB_EVENTS). Dame ejemplos de fusiones.")}
   <div class="gotcha"><b>Gotcha:</b> en estos datos email y cédula son únicos; las fusiones reales vienen de <b>teléfonos compartidos</b> (~139). No enlaces por nombre normalizado: con ~134k nombres en 500k filas generaría un componente gigante.</div>
   <div class="res-line"><span class="pill res">RESULTADO</span>Grafo de identidad + resumen (alimenta la pantalla force-directed de la app).</div>
  `},
