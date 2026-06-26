@@ -145,6 +145,14 @@ const parts = [
     <li><b>Escala:</b> ~500.010 contactos por marca. El warehouse arranca en XSMALL; sólo el entrenamiento del modelo (Parte 6) sube a MEDIUM y luego vuelve a XSMALL.</li>
     <li><b>Nota de conexión:</b> usa <code class="inl">demo_account_aws_2</code> para la Cuenta B (la conexión por SSO <code class="inl">uhb57140</code> falla por configuración SAML).</li>
   </ul>
+  <h3>Cómo correr la demo desde cero</h3>
+  <div class="biz"><span class="lbl">EMPIEZA AQUÍ</span>Sigue las partes <b>en orden, de la 1 a la 10</b>. Cada parte trae el prompt de CoCo (y, en el Clean Room, el código exacto) para construir ese paso. Al terminar, la <b>Parte 11</b> resetea todo al momento cero para volver a empezar.</div>
+  <ol>
+    <li><b>Antes de empezar</b>, verifica los 3 prerrequisitos: (a) las 2 conexiones responden — <code class="inl">SELECT 1</code> en <code class="inl">demo_account_aws</code> y <code class="inl">demo_account_aws_2</code>; (b) la semilla <code class="inl">HAVAS_CEBA_DEMO.PUBLIC.TIENDA_CEBA_CRUDO</code> existe (~512.010 filas); (c) la audiencia de B <code class="inl">PADRE_MASCOTAS_CDP.GOBIERNO.AUDIENCIA_CLEANROOM</code> existe (500.010, hasheada).</li>
+    <li><b>¿Ya corriste la demo antes?</b> Primero ejecuta la <b>Parte 11 (Reset)</b> para limpiar la corrida anterior; luego vuelve aquí y empieza por la Parte 1.</li>
+    <li><b>Construye A</b> (Partes 1→8) → <b>verifica B lista</b> → <b>Clean Room</b> (Parte 9) → <b>App</b> (Parte 10).</li>
+    <li><b>Clean Room la 1ª vez</b>: registra offerings + template (Parte 9). <b>En corridas siguientes</b> ya están registrados: salta el registro y ve directo a <code class="inl">INITIALIZE</code> (ver nota en la Parte 11).</li>
+  </ol>
   <h3>Arquitectura y stack</h3>
   <ul>
     <li>Ingesta: export crudo de la Tienda Ceba (tabla fuente) → CRM; Padre de Mascotas llega pre-lista.</li>
@@ -356,71 +364,70 @@ const parts = [
   <div class="res-line"><span class="pill res">RESULTADO</span>Padre de Mascotas confirmada lista: audiencia hasheada de 500.010 (sin PII), persistente entre corridas — solo falta integrarla en el Clean Room (Parte 10).</div>
   <div class="gotcha"><b>Por qué pre-lista y mínima:</b> el overlap por tier usa el tier de la <b>Tienda Ceba</b>; el de B no se usa. B se prepara una sola vez (CRM → CUSTOMER_360 → audiencia hasheada) y queda persistente; no necesita eventos, modelo ni scores. Se evita duplicar el CDP en cada cuenta.</div>
  `},
- {id:"p11", grp:"Clean Room", title:"9 · Data Clean Room cross-account", html:`
-  <h2><span class="num">9</span>Data Clean Room cross-account</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>A y B encuentran clientes en común y activan sin compartir PII. Usa el skill <code class="inl">data-cleanrooms</code> de CoCo.</div>
-  <div class="biz"><span class="lbl">PARA NEGOCIO</span>El momento clave: dos marcas descubren <b>125.000 clientes en común</b> (13.492 de alta propensión) sin que ninguna vea los correos de la otra.</div>
-  ${prompt("Prompt CoCo — verificación + RBAC (A y B)","Verifica que Data Clean Rooms esté instalado (SHOW DATABASES LIKE 'SAMOOHA_BY_SNOWFLAKE_LOCAL_DB%'). Con ACCOUNTADMIN, otorga al rol CDP_ADMIN los privilegios de cuenta necesarios para crear/ver colaboraciones, registrar offerings y ejecutar análisis. Lista los privilegios otorgados.")}
-  ${prompt("Prompt CoCo — audiencia NO-PII (Cuenta A)","Crea GOBIERNO.AUDIENCIA_CLEANROOM en la Tienda Ceba: una fila por cliente con SHA2(email_normalizado) AS HASHED_EMAIL, más atributos NO identificables (tier de propensión, ciudad, lifecycle_stage, flag consentimiento). Sin email/teléfono/nombre en claro. (Padre de Mascotas ya creó la suya en su paso mínimo.)")}
-  ${prompt("Código exacto — audiencia NO-PII (Cuenta A)",`CREATE OR REPLACE TABLE TIENDA_CEBA_CDP.GOBIERNO.AUDIENCIA_CLEANROOM AS
-SELECT SHA2(c.email,256)   AS HASHED_EMAIL,
-       c.tier              AS TIER_PROPENSION,
-       c.ciudad            AS CITY,
-       c.lifecycle_stage   AS LIFECYCLE_STAGE,
-       c.consent_marketing AS CONSENT_MARKETING
+ {id:"p11", grp:"Clean Room", title:"8 · Data Clean Room (overlap A↔B)", html:`
+  <h2><span class="num">8</span>Data Clean Room — overlap A↔B</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Las dos marcas descubren sus clientes en común y los <b>materializan en una tabla</b> en la Cuenta A — con columnas <code class="inl">A_</code> (Tienda Ceba) y <code class="inl">B_</code> (Padre de Mascotas) — sin compartir PII. Usa el skill <code class="inl">data-cleanrooms</code> de CoCo.</div>
+  <div class="biz"><span class="lbl">PARA NEGOCIO</span>El momento clave: las dos marcas ven <b>fila por fila</b> qué clientes comparten (≈125.000) y qué aportó cada una (segmento, ciudad), sin que ninguna entregue su lista de correos.</div>
+  <h3>Un prompt por cuenta</h3>
+  ${prompt("Prompt CoCo — Cuenta A (Tienda Ceba · owner + runner)","Usando el skill data-cleanrooms, monta el clean room de overlap con la Cuenta B (SFSENORTHAMERICA.DEMO_JPARRADO2) y materializa el resultado en la Cuenta A:\n1) Crea la audiencia NO-PII CLEANROOM.AUDIENCIA_CLEANROOM: una fila por cliente con SHA2(email) AS HASHED_EMAIL + atributos no identificables (segmento, ciudad, lifecycle_stage). Sin email/teléfono/nombre.\n2) Registra el offering (HASHED_EMAIL como join key hashed_email_sha256; SEGMENTO/CITY/LIFECYCLE_STAGE passthrough). Si ya existe, sube la versión.\n3) Registra un template CUSTOM sql_analysis ROW-LEVEL que une por hashed_email_sha256 y devuelve A_HASHED_EMAIL, A_SEGMENTO, A_CITY, A_LIFECYCLE, B_CITY, B_LIFECYCLE.\n4) Crea la colaboración MASCOTAS_OVERLAP (A owner+provider+runner, B provider) incluyendo ambos offerings y el template.\n5) Cuando B se una, ejecuta el template y MATERIALIZA el resultado en CLEANROOM.OVERLAP_AB con CREATE TABLE AS SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())). Repórtame el nº de clientes en común y un ejemplo de fila.")}
+  ${prompt("Prompt CoCo — Cuenta B (Padre de Mascotas · provider)","Usando data-cleanrooms en la Cuenta B: confirma tu audiencia hasheada (HASHED_EMAIL + CITY + LIFECYCLE_STAGE, sin PII), regístrala como offering con el mismo join key hashed_email_sha256, y ÚNETE (JOIN) a la colaboración MASCOTAS_OVERLAP cuando llegue la invitación. Al unirte aceptas el template del spec.")}
+  <h3>Código exacto</h3>
+  ${prompt("1 · Audiencia NO-PII (Cuenta A)",`CREATE OR REPLACE TABLE TIENDA_CEBA_CDP.CLEANROOM.AUDIENCIA_CLEANROOM AS
+SELECT SHA2(c.email,256) AS HASHED_EMAIL,
+       c.segmento        AS SEGMENTO,
+       c.ciudad          AS CITY,
+       c.lifecycle_stage AS LIFECYCLE_STAGE
 FROM TIENDA_CEBA_CDP.GOLD.CUSTOMER_360 c;`)}
-  ${prompt("Prompt CoCo — registrar offerings (A y B)","Usando data-cleanrooms, registra cada audiencia como data offering: en A registra GOBIERNO.AUDIENCIA_CLEANROOM (HASHED_EMAIL como join key, activation_allowed) y en B la suya. USE SECONDARY ROLES NONE antes de REGISTER y ALL después.")}
-  ${prompt("Código exacto — registrar offering (Cuenta A)",`USE ROLE ACCOUNTADMIN;
+  ${prompt("2 · Registrar offering (Cuenta A)",`USE ROLE ACCOUNTADMIN;
 USE SECONDARY ROLES NONE;
 CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.REGISTRY.REGISTER_DATA_OFFERING($$
 api_version: 2.0.0
 spec_type: data_offering
 name: AUDIENCIA_CEBA
-version: "v1"
-description: Audiencia NO-PII de Tienda Ceba (hashed email + tier + ciudad)
+version: "rl1"
+description: Audiencia NO-PII de Tienda Ceba (hashed email + segmento + ciudad)
 datasets:
   - alias: audiencia
-    data_object_fqn: TIENDA_CEBA_CDP.GOBIERNO.AUDIENCIA_CLEANROOM
+    data_object_fqn: TIENDA_CEBA_CDP.CLEANROOM.AUDIENCIA_CLEANROOM
     allowed_analyses: template_only
     object_class: custom
     schema_and_template_policies:
       HASHED_EMAIL:
         category: join_standard
         column_type: hashed_email_sha256
-        activation_allowed: true
-      TIER_PROPENSION: { category: passthrough }
+      SEGMENTO:        { category: passthrough }
       CITY:            { category: passthrough }
       LIFECYCLE_STAGE: { category: passthrough }
-      CONSENT_MARKETING: { category: passthrough }
 $$);
 USE SECONDARY ROLES ALL;
--- En la Cuenta B (demo_account_aws_2): misma llamada con
---   name: AUDIENCIA_PADRE   y   data_object_fqn: PADRE_MASCOTAS_CDP.GOBIERNO.AUDIENCIA_CLEANROOM`)}
-  ${prompt("Prompt CoCo — registrar template (Cuenta A)","Usando data-cleanrooms, registra con REGISTER_TEMPLATE un template de análisis CUSTOM que cuente el overlap por tier; referencia la columna de join como hashed_email_sha256 (NO hashed_email). Es el análisis que correremos en el clean room.")}
-  ${prompt("Código exacto — template custom (Cuenta A)",`USE ROLE ACCOUNTADMIN;
+-- En la Cuenta B (demo_account_aws_2): misma llamada con name: AUDIENCIA_PADRE,
+--   version "rl1", el FQN de su audiencia y passthrough CITY, LIFECYCLE_STAGE.`)}
+  ${prompt("3 · Template row-level (Cuenta A)",`USE ROLE ACCOUNTADMIN;
 CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.REGISTRY.REGISTER_TEMPLATE($$
 api_version: 2.0.0
 spec_type: template
-name: mascotas_overlap_by_tier
+name: mascotas_overlap_rowlevel
 version: "v1"
 type: sql_analysis
-description: Overlap A x B por tier de propension (hashed emails en comun)
+description: Clientes en comun A x B (row-level) con atributos de cada parte
 template: |
-  SELECT a.TIER_PROPENSION AS tier,
-         COUNT(DISTINCT a.hashed_email_sha256) AS overlap_count
+  SELECT
+    a.hashed_email_sha256 AS A_HASHED_EMAIL,
+    a.SEGMENTO            AS A_SEGMENTO,
+    a.CITY                AS A_CITY,
+    a.LIFECYCLE_STAGE     AS A_LIFECYCLE,
+    b.CITY                AS B_CITY,
+    b.LIFECYCLE_STAGE     AS B_LIFECYCLE
   FROM IDENTIFIER({{ source_table[0] }}) a
   INNER JOIN IDENTIFIER({{ source_table[1] }}) b
     ON a.hashed_email_sha256 = b.hashed_email_sha256
-  GROUP BY a.TIER_PROPENSION
-  ORDER BY overlap_count DESC
 $$);`)}
-  ${prompt("Prompt CoCo — crear colaboración (Cuenta A)","Usando data-cleanrooms, crea la colaboración cross-account \"MASCOTAS_OVERLAP\": A (esta) Owner + Data Provider + Analysis Runner y B (SFSENORTHAMERICA.DEMO_JPARRADO2) Data Provider. Incluye en el spec ambos offerings y el template de overlap por tier. Confírmame el spec antes de inicializar.")}
-  ${prompt("Código exacto — crear colaboración (Cuenta A)",`USE ROLE ACCOUNTADMIN;
+  ${prompt("4 · Crear colaboración (Cuenta A)",`USE ROLE ACCOUNTADMIN;
 CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.INITIALIZE($$
 api_version: "2.0.0"
 spec_type: collaboration
 name: MASCOTAS_OVERLAP
-description: Overlap cross-account de clientes de mascotas sin compartir PII
+description: Overlap row-level cross-account de clientes de mascotas sin compartir PII
 collaborator_identifier_aliases:
   TIENDA_CEBA: SFSENORTHAMERICA.DEMO_JPARRADO
   PADRE_MASCOTAS: SFSENORTHAMERICA.DEMO_JPARRADO2
@@ -430,55 +437,92 @@ analysis_runners:
     data_providers:
       TIENDA_CEBA:
         data_offerings:
-          - id: AUDIENCIA_CEBA_v1
+          - id: AUDIENCIA_CEBA_rl1
       PADRE_MASCOTAS:
         data_offerings:
-          - id: AUDIENCIA_PADRE_v1
+          - id: AUDIENCIA_PADRE_rl1
     templates:
-      - id: mascotas_overlap_by_tier_v1
+      - id: mascotas_overlap_rowlevel_v1
 $$);`)}
-  ${prompt("Prompt CoCo — unirse (Cuenta B)","Usando data-cleanrooms, revisa la invitación y únete a \"MASCOTAS_OVERLAP\". Al unirse, B acepta el template incluido en el spec (no hace falta aprobación aparte).")}
-  ${prompt("Código exacto — unirse (Cuenta B)",`USE ROLE ACCOUNTADMIN;
+  ${prompt("5 · Unirse (Cuenta B)",`USE ROLE ACCOUNTADMIN;
 USE SECONDARY ROLES NONE;
 CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.JOIN('MASCOTAS_OVERLAP');
 USE SECONDARY ROLES ALL;`)}
-  ${prompt("Prompt CoCo — ejecutar overlap (Cuenta A runner)","Usando data-cleanrooms, ejecuta el template sobre las dos audiencias (con tamaño mínimo de grupo / k-anonymity). Resúmeme: overlap total, % sobre cada base y desglose por tier de propensión de A.")}
-  ${prompt("Código exacto — ejecutar overlap (Cuenta A runner)",`CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.RUN('MASCOTAS_OVERLAP', $$
+  ${prompt("6 · Ejecutar + materializar (Cuenta A runner)",`CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.RUN('MASCOTAS_OVERLAP', $$
 api_version: "2.0.0"
 spec_type: "analysis"
-name: "overlap_mascotas_por_tier"
-description: "Overlap A x B por tier sobre hashed_email"
-template: "mascotas_overlap_by_tier_v1"
+name: "overlap_rowlevel"
+description: "Clientes en comun A x B (row-level)"
+template: "mascotas_overlap_rowlevel_v1"
 template_configuration:
   view_mappings:
     source_tables:
-      - "TIENDA_CEBA.AUDIENCIA_CEBA_v1.audiencia"
-      - "PADRE_MASCOTAS.AUDIENCIA_PADRE_v1.audiencia"
+      - "TIENDA_CEBA.AUDIENCIA_CEBA_rl1.audiencia"
+      - "PADRE_MASCOTAS.AUDIENCIA_PADRE_rl1.audiencia"
   local_view_mappings:
     my_tables: []
   arguments: {}
-$$);`)}
-  <p><span class="pill gui">GUI</span>Snowsight → Data Clean Rooms → Create → añade Cuenta B como invitada.</p>
-  <div class="res-line"><span class="pill res">RESULTADO</span>Overlap agregado por tier, sin que A vea los emails de B. Mensaje: campañas co-marca sobre clientes compartidos de alta propensión sin que ninguna marca entregue su CRM.</div>
-  <div class="gotcha"><b>Gotchas:</b> la columna de join se expone con el nombre del tipo (<code class="inl">hashed_email_sha256</code>), no <code class="inl">hashed_email</code> — el template debe referenciar ese nombre. Incluye el template en el spec del INITIALIZE para que B lo acepte al unirse (o añádelo luego con <code class="inl">ADD_TEMPLATE_REQUEST</code> + <code class="inl">APPROVE_UPDATE_REQUEST</code> en B). Usa <code class="inl">USE SECONDARY ROLES NONE</code> antes de REGISTER/JOIN/LINK y <code class="inl">ALL</code> después. La activación directa al runner puede fallar con <code class="inl">ACTIVATION_DATA_… does not exist</code> (borde de auto-activación); el overlap agregado por tier es el entregable central. Nunca consultes tablas internas de SAMOOHA; solo procedimientos CALL.</div>
-  <div class="res-line"><span class="pill res">VALIDADO</span>Overlap real A∩B = <b>125.000</b> (25% de cada base) · por tier de A: Alto <b>13.492</b>, Medio 57.896, Bajo 53.612 — computado en el clean room sin compartir PII.</div>
+$$);
+
+-- Materializa el resultado del RUN en una tabla de la Cuenta A (con columnas A_/B_):
+CREATE OR REPLACE TABLE TIENDA_CEBA_CDP.CLEANROOM.OVERLAP_AB AS
+  SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()));
+SELECT COUNT(*) AS clientes_en_comun FROM TIENDA_CEBA_CDP.CLEANROOM.OVERLAP_AB;`)}
+  <div class="res-line"><span class="pill res">RESULTADO</span>Tabla <code class="inl">CLEANROOM.OVERLAP_AB</code> en la Cuenta A con los clientes en común fila por fila: columnas <code class="inl">A_*</code> (segmento, ciudad, ciclo de vida de Tienda Ceba) y <code class="inl">B_*</code> (ciudad, ciclo de vida de Padre de Mascotas), unidas por email hasheado — sin PII en claro. Así consultas qué trajo cada parte.</div>
+  <div class="gotcha"><b>Gotchas:</b> la columna de join se expone con el nombre del tipo (<code class="inl">hashed_email_sha256</code>), no <code class="inl">hashed_email</code>. Como las columnas de la audiencia cambiaron (ahora <b>SEGMENTO</b> en vez de tier), registra una <b>versión nueva</b> del offering (no hay API para borrar registros). Captura el resultado del RUN con <code class="inl">RESULT_SCAN(LAST_QUERY_ID())</code> inmediatamente después del CALL. Usa <code class="inl">USE SECONDARY ROLES NONE</code> antes de REGISTER/JOIN. Si el entorno bloquea la salida row-level por umbral de privacidad, agrega un <code class="inl">GROUP BY</code> por segmento/ciudad. Nunca consultes tablas internas de SAMOOHA; solo procedimientos CALL.</div>
+  <div class="res-line"><span class="pill res">VALIDADO</span>Overlap real A∩B ≈ <b>125.000</b> clientes en común (25% de cada base), materializados en <code class="inl">CLEANROOM.OVERLAP_AB</code> con columnas A_/B_.</div>
  `},
- {id:"p12", grp:"App", title:"10 · App React + SPCS", html:`
-  <h2><span class="num">10</span>App React + SPCS</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Visualizar CDP + Clean Room en una app con URL pública SSO.</div>
-  <div class="biz"><span class="lbl">PARA NEGOCIO</span>Todo lo anterior en una app visual con URL propia, para que negocio lo explore y lo presente sin tocar SQL.</div>
-  ${prompt("Prompt CoCo — snapshots","Exporta a app/public/data/ los snapshots JSON que necesita la app:\n- kpis.json, tiers.json (de GOLD.CUSTOMER_360)\n- customers.json: muestra de 8000 clientes con score y tier\n- identity.json: aristas para el grafo (ARRAY PLANO)\n- overlap.json: resultado del clean room (overlap, %, lift)\n- roi.json: de SEGMENTS.ACTIVACIONES (Masivo/paid vs Dirigido-CDP/email)\nUsa snow sql --format json -q \"...\" 1>archivo (NO uses USE WAREHOUSE en el -q).")}
-  ${prompt("Prompt CoCo — scaffold","En app/ crea un proyecto Vite + React 18 + d3 v7 con tema Snowflake oscuro (#29B5E8/#8A6FE8, glassmorphism). 6 pantallas que leen ./data/*.json:\n1) Resumen (KPIs animados + tiers)\n2) Constructor de segmentos (filtros en memoria, gauge + scatter canvas)\n3) Identity Resolution (grafo force-directed)\n4) Clean Room Overlap (overlap A∩B + k-anonymity)\n5) Activación / ROI (barras Masivo vs Dirigido-CDP)\n6) Agente (embebe el agente CDP)\nSPA estática, sin backend.")}
+ {id:"p12", grp:"App", title:"9 · App React + SPCS", html:`
+  <h2><span class="num">9</span>App React + SPCS — resultados del Clean Room</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Una app visual (URL pública SSO) que consume <b>solo</b> la tabla <code class="inl">CLEANROOM.OVERLAP_AB</code> y muestra los clientes en común y qué aportó cada marca.</div>
+  <div class="biz"><span class="lbl">PARA NEGOCIO</span>El cierre: una app atractiva donde negocio ve los <b>clientes en común</b> entre las dos marcas, por segmento y ciudad, listos para una campaña co-marca — sin tocar SQL.</div>
+  ${prompt("Prompt CoCo — snapshots","Exporta a app/public/data/ los snapshots JSON desde TIENDA_CEBA_CDP.CLEANROOM.OVERLAP_AB:\n- kpis.json: total de clientes en común, % sobre cada base (500.010), nº de segmentos y ciudades distintas.\n- by_segmento.json: conteo de clientes en común por A_SEGMENTO (ARRAY PLANO).\n- by_city.json: top ciudades por nº de clientes en común (A_CITY) (ARRAY PLANO).\n- overlap.json: muestra de hasta 3000 filas (A_HASHED_EMAIL truncado, A_SEGMENTO, A_CITY, A_LIFECYCLE, B_CITY, B_LIFECYCLE) (ARRAY PLANO).\nUsa snow sql --format json -q \"...\" 1>archivo (NO uses USE WAREHOUSE en el -q).")}
+  ${prompt("Prompt CoCo — scaffold","En app/ crea un proyecto Vite + React 18 + d3 v7 con tema Snowflake oscuro (#29B5E8/#8A6FE8, glassmorphism). 4 pantallas que leen ./data/*.json, todas sobre el overlap del clean room:\n1) Resumen del cruce (KPIs animados: clientes en común, % de cada base)\n2) Por segmento (barras/donut de A_SEGMENTO)\n3) Geografía (A_CITY vs B_CITY: ciudades donde coinciden)\n4) Clientes en común (tabla con filtro: A_HASHED_EMAIL, A_SEGMENTO, A_CITY, A_LIFECYCLE, B_CITY, B_LIFECYCLE)\nSPA estática, sin backend. Debe verse tan pulida como la app anterior.")}
   ${prompt("Prompt CoCo — imagen","Crea repo TIENDA_CEBA_CDP.APP.IMAGES y compute pool CDP_POOL (CPU_X64_XS). Construye la imagen que sirve dist en :8080. NOTA red: si Docker Hub está bloqueado (VPN), no uses FROM nginx público — construye FROM una imagen base ya cacheada del registry SPCS (p.ej. una node:alpine de otra demo) + un mini server.js. Comandos: npm run build → docker build --platform linux/amd64 → snow spcs image-registry login → docker push.")}
   ${prompt("Prompt CoCo — servicio","Crea el servicio TIENDA_CEBA_CDP.APP.CDP_APP_SERVICE desde especificación (FROM SPECIFICATION, reusar el mismo spec en redeploys), expón endpoint público y dame la URL con SSO.")}
-  <div class="res-line"><span class="pill res">RESULTADO</span>URL pública <code class="inl">https://&lt;hash&gt;-sfsenorthamerica-demo-jparrado.snowflakecomputing.app</code></div>
-  <div class="gotcha"><b>Gotcha App.jsx:</b> los snapshots de array (customers.json, identity.json) deben ser arrays planos [...], NO {"identity":[...]}; si se envuelven, d3.group revienta y la app queda en blanco. El hash de la URL cambia si recreas el servicio con un spec distinto; reusa el mismo spec. <b>Red:</b> con VPN, Docker Hub/gcr.io suelen estar bloqueados — construye la imagen FROM una base ya cacheada del registry SPCS (Kaniko tampoco sirve si no puedes bajar su executor).</div>
+  <div class="res-line"><span class="pill res">RESULTADO</span>URL pública <code class="inl">https://&lt;hash&gt;-sfsenorthamerica-demo-jparrado.snowflakecomputing.app</code> mostrando los clientes en común del clean room.</div>
+  <div class="gotcha"><b>Gotcha App.jsx:</b> los snapshots de array (overlap.json, by_segmento.json, by_city.json) deben ser arrays planos [...], NO {"overlap":[...]}; si se envuelven, d3.group revienta y la app queda en blanco. El hash de la URL cambia si recreas el servicio con un spec distinto; reusa el mismo spec. <b>Red:</b> con VPN, Docker Hub/gcr.io suelen estar bloqueados — construye la imagen FROM una base ya cacheada del registry SPCS.</div>
  `},
- {id:"p13", grp:"Cierre", title:"11 · Cleanup", html:`
-  <h2><span class="num">11</span>Cleanup</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Apagar consumo al terminar la demo, dejando Padre de Mascotas lista para la próxima corrida.</div>
-  ${prompt("Prompt CoCo","Limpia SOLO la Tienda Ceba y el clean room: ALTER SERVICE ... SUSPEND y DROP SERVICE CDP_APP_SERVICE; DROP COMPUTE POOL CDP_POOL; DROP IMAGE REPOSITORY TIENDA_CEBA_CDP.APP.IMAGES; desmonta la colaboración del clean room (teardown en A / leave en B vía data-cleanrooms); y DROP DATABASE TIENDA_CEBA_CDP. NO borres PADRE_MASCOTAS_CDP ni su audiencia (Padre de Mascotas debe quedar lista). Confírmame qué se va a borrar antes de ejecutar.")}
-  <div class="res-line"><span class="pill res">RESULTADO</span>Servicio, compute pool, repo y base de A eliminados + colaboración desmontada; sin consumo residual. <b>Padre de Mascotas (audiencia hasheada) permanece lista</b> para la siguiente corrida.</div>
+ {id:"p13", grp:"Cierre", title:"10 · Cleanup / Reset a momento cero", html:`
+  <h2><span class="num">10</span>Cleanup / Reset a momento cero</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Apagar consumo y <b>dejar todo listo para volver a correr la demo desde cero</b>: borra SOLO la Tienda Ceba (Cuenta A) y desmonta el clean room. Padre de Mascotas y las semillas quedan intactas.</div>
+  <div class="biz"><span class="lbl">PARA NEGOCIO</span>Al terminar dejamos la cuenta limpia y sin gasto. La marca socia (Padre de Mascotas) y los datos de origen permanecen, así la próxima demo arranca de inmediato desde la Parte 1.</div>
+  <h3>Qué se borra y qué sobrevive</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="background:var(--highlight)"><th style="text-align:left;padding:7px 10px;border:1px solid var(--border);width:50%">Se borra (Cuenta A)</th><th style="text-align:left;padding:7px 10px;border:1px solid var(--border)">Sobrevive</th></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">Base <code class="inl">TIENDA_CEBA_CDP</code> (7 esquemas), notebooks (CDP_SEGMENTACION, CDP_LOOKALIKES), servicio SPCS, compute pool, image repository, agente</td><td style="padding:6px 10px;border:1px solid var(--border)"><b>Semillas</b> <code class="inl">HAVAS_CEBA_DEMO</code> y <code class="inl">HAVAS_PADRE_DEMO</code> (el momento cero)</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">Colaboración <code class="inl">MASCOTAS_OVERLAP</code> (teardown en A + leave en B)</td><td style="padding:6px 10px;border:1px solid var(--border)"><b>Cuenta B</b> <code class="inl">PADRE_MASCOTAS_CDP</code> y su audiencia hasheada (pre-lista)</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">—</td><td style="padding:6px 10px;border:1px solid var(--border)"><b>Offerings / templates</b> del clean room en el registro de SAMOOHA (no hay API para borrarlos · ver nota)</td></tr>
+  </table>
+  ${prompt("Prompt CoCo","Resetea SOLO la Tienda Ceba y el clean room para poder correr la demo desde cero. Usando el skill data-cleanrooms haz teardown de la colaboración MASCOTAS_OVERLAP en la Cuenta A (y leave en la Cuenta B). Luego en la Cuenta A: ALTER SERVICE ... SUSPEND + DROP SERVICE CDP_APP_SERVICE; DROP COMPUTE POOL CDP_POOL; DROP IMAGE REPOSITORY TIENDA_CEBA_CDP.APP.IMAGES; DROP el agente; y DROP DATABASE TIENDA_CEBA_CDP. NO borres HAVAS_CEBA_DEMO ni HAVAS_PADRE_DEMO (semillas) ni PADRE_MASCOTAS_CDP (Cuenta B). Confírmame qué se va a borrar antes de ejecutar.")}
+  <h3>Código exacto · paso 1 — desmontar el clean room</h3>
+  <p>El teardown/leave es <b>asíncrono y en dos llamadas</b>: corre, revisa el estado con <code class="inl">GET_STATUS</code> y vuelve a llamar cuando diga <code class="inl">LOCAL_DROP_PENDING</code>.</p>
+  ${prompt("Código exacto — teardown (Cuenta A · owner)",`USE ROLE ACCOUNTADMIN;
+USE SECONDARY ROLES NONE;
+-- Si la colaboración quedó en CREATED sin unirte, primero únete (el owner debe unirse antes de teardown):
+-- CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.JOIN('MASCOTAS_OVERLAP');
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.TEARDOWN('MASCOTAS_OVERLAP');
+-- Revisa el estado; cuando muestre LOCAL_DROP_PENDING, vuelve a llamar TEARDOWN:
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.GET_STATUS('MASCOTAS_OVERLAP');
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.TEARDOWN('MASCOTAS_OVERLAP');
+USE SECONDARY ROLES ALL;`)}
+  ${prompt("Código exacto — leave (Cuenta B)",`USE ROLE ACCOUNTADMIN;
+USE SECONDARY ROLES NONE;
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.LEAVE('MASCOTAS_OVERLAP');
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.GET_STATUS('MASCOTAS_OVERLAP');
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.LEAVE('MASCOTAS_OVERLAP');
+USE SECONDARY ROLES ALL;`)}
+  <h3>Código exacto · paso 2 — borrar cómputo y base (Cuenta A)</h3>
+  ${prompt("Código exacto — drop cómputo + base (Cuenta A)",`USE ROLE ACCOUNTADMIN;
+EXECUTE IMMEDIATE $$ BEGIN ALTER SERVICE TIENDA_CEBA_CDP.APP.CDP_APP_SERVICE SUSPEND; EXCEPTION WHEN OTHER THEN NULL; END $$;
+DROP SERVICE IF EXISTS TIENDA_CEBA_CDP.APP.CDP_APP_SERVICE;
+DROP COMPUTE POOL IF EXISTS CDP_POOL;
+DROP IMAGE REPOSITORY IF EXISTS TIENDA_CEBA_CDP.APP.IMAGES;
+EXECUTE IMMEDIATE $$ BEGIN DROP AGENT IF EXISTS SNOWFLAKE_INTELLIGENCE.AGENTS.CDP_AGENT_TIENDA_CEBA; EXCEPTION WHEN OTHER THEN NULL; END $$;
+DROP DATABASE IF EXISTS TIENDA_CEBA_CDP;
+-- NO borres: HAVAS_CEBA_DEMO, HAVAS_PADRE_DEMO (semillas) ni PADRE_MASCOTAS_CDP (Cuenta B).`)}
+  <div class="gotcha"><b>Sobre los offerings/templates del clean room:</b> SAMOOHA <b>no tiene API para desregistrarlos</b>, así que <code class="inl">AUDIENCIA_CEBA_rl1</code> / <code class="inl">mascotas_overlap_rowlevel_v1</code> quedan en el registro. Es intencional: apuntan al FQN <code class="inl">TIENDA_CEBA_CDP.CLEANROOM.AUDIENCIA_CLEANROOM</code>, que la Parte 8 vuelve a crear con el mismo nombre. <b>En la siguiente corrida NO los vuelvas a registrar</b> (daría "already exists"): salta el registro y ve directo a <code class="inl">INITIALIZE</code>. Si necesitas cambiarlos, sube la versión (rl2, rl3…).</div>
+  <div class="res-line"><span class="pill res">RESULTADO</span>Servicio, compute pool, repo, agente y base de A eliminados + colaboración desmontada; sin consumo residual. <b>Padre de Mascotas y las semillas quedan listas</b> → vuelve a la Parte 1 para correr desde cero.</div>
  `},
  {id:"narr", grp:"Cierre", title:"Narrativa de presentación", html:`
   <h2>Guion de presentación (narrativa)</h2>
