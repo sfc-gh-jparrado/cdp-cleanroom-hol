@@ -70,6 +70,11 @@
   .biz{border-left:4px solid var(--green);background:#F1FAF3;padding:11px 16px;border-radius:0 8px 8px 0;margin:12px 0;font-size:14.5px;color:#2c4a30}
   .biz b{color:var(--green);font-family:var(--font-h)}
   .biz .lbl{display:inline-block;font-family:var(--font-h);font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;margin-right:8px;background:#E3F6E8;color:var(--green);letter-spacing:.4px}
+  .anode{cursor:pointer}
+  .anode .ok{display:none}
+  .anode.on .ok{display:block}
+  .anode.on > rect{stroke:#2E7D32 !important;stroke-width:3 !important}
+  .anode:hover > rect{filter:brightness(.96)}
   .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
   .metric{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;box-shadow:0 1px 2px rgba(33,45,53,.04)}
   .metric .v{font-family:var(--font-h);font-size:27px;font-weight:800;color:var(--sf)}
@@ -175,10 +180,54 @@ const parts = [
  {id:"arq", grp:"Inicio", title:"Arquitectura", html:`
   <h2>Arquitectura de la demo</h2>
   <div class="biz"><span class="lbl">PARA NEGOCIO</span>Tienda Ceba trabaja su CDP completo en su propia cuenta; Padre de Mascotas solo aporta su lista cifrada (ya lista). Se encuentran en un Clean Room neutral y los datos nunca salen de cada cuenta.</div>
-  <h3>Flujo de datos — Tienda Ceba</h3>
-  <p style="font-family:var(--font-code);font-size:12px;line-height:2.1;color:var(--sf-navy)">Export crudo ~512k → <b>CRM</b> → <b>SILVER</b> (dedup + identidad, 500k) → <b>EVENTS</b> (comportamiento) → <b>GOLD.CUSTOMER_360</b> (+ propensión/tier) → <b>SEGMENTS</b> (audiencias + ROI) → <b>GOBIERNO</b> (PII + consentimiento) → audiencia hasheada</p>
-  <h3>Cross-account</h3>
-  <p style="font-family:var(--font-code);font-size:12px;line-height:2.1;color:var(--sf-navy)">Tienda Ceba (audiencia hasheada) + Padre de Mascotas (audiencia hasheada · pre-lista) → <b>Data Clean Room</b> → overlap <b>125.000</b> sin PII → <b>App + Agente</b></p>
+  <h3>Flujo interactivo — marca tu avance</h3>
+  <p style="font-size:13px;color:var(--muted);margin:6px 0 10px">Haz clic en cada componente para marcarlo <b>completado</b> (chulito verde) a medida que avanzas en el demo. Tu progreso se guarda. <span id="arqCount" style="font-weight:700;color:var(--green)"></span> &nbsp;<button id="arqReset" style="background:var(--card);border:1px solid var(--border);border-radius:7px;padding:3px 11px;font-size:12px;cursor:pointer;font-family:var(--font-h);font-weight:700;color:var(--sf-navy)">Reiniciar</button></p>
+  <svg viewBox="0 0 1180 840" style="width:100%;height:auto;border:1px solid var(--border);border-radius:10px;background:#fff" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5C6B78"/></marker>
+      <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#29B5E8"/></marker>
+    </defs>
+    <rect x="20" y="70" width="780" height="430" rx="12" fill="#FBFDFE" stroke="#29B5E8" stroke-width="2"/>
+    <text x="36" y="94" font-size="13" font-weight="800" fill="#0E6F9A">CUENTA A · Tienda Ceba — CDP completo</text>
+    <rect x="830" y="70" width="330" height="170" rx="12" fill="#FBFDFE" stroke="#27AE60" stroke-width="2"/>
+    <text x="846" y="94" font-size="13" font-weight="800" fill="#1e8449">CUENTA B · Padre de Mascotas — pre-lista</text>
+    <text x="36" y="560" font-size="13" font-weight="800" fill="#0E6F9A">TERRENO NEUTRAL · Data Clean Room cross-account (sin compartir PII)</text>
+
+    <g class="anode" data-k="crm"><rect x="40" y="150" width="160" height="62" rx="8" fill="#FDEBD0" stroke="#E67E22" stroke-width="2"/><text x="120" y="174" text-anchor="middle" font-size="12.5" font-weight="700">CRM</text><text x="120" y="190" text-anchor="middle" font-size="11" fill="#7a5a1e">HUBSPOT_CONTACTS</text><text x="120" y="204" text-anchor="middle" font-size="11" fill="#7a5a1e">512k crudas</text><g class="ok"><circle cx="196" cy="154" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="196" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="events"><rect x="40" y="244" width="160" height="74" rx="8" fill="#FDEBD0" stroke="#E67E22" stroke-width="2"/><text x="120" y="268" text-anchor="middle" font-size="12.5" font-weight="700">EVENTS</text><text x="120" y="284" text-anchor="middle" font-size="11" fill="#7a5a1e">web · compras · ads</text><text x="120" y="300" text-anchor="middle" font-size="10.5" font-style="italic" fill="#b26a00">(sintético en demo)</text><g class="ok"><circle cx="196" cy="248" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="196" y="252" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="silver"><rect x="250" y="178" width="170" height="120" rx="8" fill="#EAEDED" stroke="#95A5A6" stroke-width="2"/><text x="335" y="200" text-anchor="middle" font-size="12.5" font-weight="700">SILVER</text><text x="335" y="220" text-anchor="middle" font-size="11" fill="#42545f">HUBSPOT dedup (500k)</text><text x="335" y="238" text-anchor="middle" font-size="11" fill="#42545f">IDENTITY_GRAPH</text><text x="335" y="256" text-anchor="middle" font-size="11" fill="#42545f">IDENTITY_SUMMARY</text><text x="335" y="274" text-anchor="middle" font-size="11" fill="#42545f">ML_FEATURES</text><g class="ok"><circle cx="416" cy="182" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="416" y="186" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="ml"><rect x="470" y="96" width="165" height="52" rx="8" fill="#D6EAF8" stroke="#3498DB" stroke-width="2"/><text x="552" y="117" text-anchor="middle" font-size="12.5" font-weight="700">ML</text><text x="552" y="134" text-anchor="middle" font-size="10.5" fill="#1f618d">modelo + lookalikes</text><g class="ok"><circle cx="631" cy="100" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="631" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="gold"><rect x="470" y="184" width="165" height="108" rx="8" fill="#FCF3CF" stroke="#F1C40F" stroke-width="2"/><text x="552" y="206" text-anchor="middle" font-size="12.5" font-weight="700">GOLD</text><text x="552" y="226" text-anchor="middle" font-size="11" fill="#7d6608">CUSTOMER_360</text><text x="552" y="244" text-anchor="middle" font-size="11" fill="#7d6608">+ person_id</text><text x="552" y="262" text-anchor="middle" font-size="11" fill="#7d6608">+ propensión / tier</text><text x="552" y="280" text-anchor="middle" font-size="10" font-style="italic" fill="#9a7d0a">(One Big Table)</text><g class="ok"><circle cx="631" cy="188" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="631" y="192" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="segments"><rect x="660" y="182" width="125" height="50" rx="7" fill="#D6EAF8" stroke="#3498DB" stroke-width="2"/><text x="722" y="202" text-anchor="middle" font-size="12" font-weight="700">SEGMENTS</text><text x="722" y="218" text-anchor="middle" font-size="11" fill="#1f618d">audiencias + ROI</text><g class="ok"><circle cx="781" cy="186" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="781" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="gobierno"><rect x="660" y="244" width="125" height="50" rx="7" fill="#E8DAEF" stroke="#9B59B6" stroke-width="2"/><text x="722" y="264" text-anchor="middle" font-size="12" font-weight="700">GOBIERNO</text><text x="722" y="280" text-anchor="middle" font-size="11" fill="#6c3483">masking + audiencia</text><g class="ok"><circle cx="781" cy="248" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="781" y="252" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="app"><rect x="660" y="306" width="125" height="50" rx="7" fill="#D6EAF8" stroke="#3498DB" stroke-width="2"/><text x="722" y="326" text-anchor="middle" font-size="12" font-weight="700">APP</text><text x="722" y="342" text-anchor="middle" font-size="11" fill="#1f618d">semántica + agente</text><g class="ok"><circle cx="781" cy="310" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="781" y="314" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+
+    <path d="M200,178 L248,224" fill="none" stroke="#5C6B78" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M200,278 L248,256" fill="none" stroke="#5C6B78" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M420,238 L468,238" fill="none" stroke="#5C6B78" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M418,196 L468,128" fill="none" stroke="#3498DB" stroke-width="2" marker-end="url(#arrb)"/>
+    <text x="398" y="150" font-size="10" fill="#1f618d">features</text>
+    <path d="M552,148 L552,182" fill="none" stroke="#3498DB" stroke-width="2" marker-end="url(#arrb)"/>
+    <text x="558" y="170" font-size="10" fill="#1f618d">scores</text>
+    <path d="M635,234 L658,205" fill="none" stroke="#5C6B78" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M635,250 L658,266" fill="none" stroke="#5C6B78" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M635,258 L658,328" fill="none" stroke="#5C6B78" stroke-width="2" marker-end="url(#arr)"/>
+
+    <g class="anode" data-k="bpre"><rect x="855" y="120" width="280" height="92" rx="8" fill="#D5F5E3" stroke="#27AE60" stroke-width="2"/><text x="995" y="146" text-anchor="middle" font-size="12.5" font-weight="700">Audiencia hasheada (pre-provisionada)</text><text x="995" y="166" text-anchor="middle" font-size="11" fill="#1e6b43">GOBIERNO.AUDIENCIA_CLEANROOM</text><text x="995" y="184" text-anchor="middle" font-size="11" fill="#1e6b43">500.010 · SHA2(email), sin PII</text><text x="995" y="202" text-anchor="middle" font-size="10" font-style="italic" fill="#1e8449">no replica el CDP</text><g class="ok"><circle cx="1131" cy="124" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="1131" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+
+    <g class="anode" data-k="auda"><rect x="150" y="585" width="190" height="62" rx="8" fill="#E8DAEF" stroke="#9B59B6" stroke-width="2"/><text x="245" y="610" text-anchor="middle" font-size="12" font-weight="700">Audiencia A (hash)</text><text x="245" y="628" text-anchor="middle" font-size="11" fill="#6c3483">Tienda Ceba · por tier</text><g class="ok"><circle cx="336" cy="589" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="336" y="593" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="cleanroom"><rect x="490" y="575" width="200" height="84" rx="10" fill="#29B5E8" stroke="#0E6F9A" stroke-width="2"/><text x="590" y="606" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">DATA CLEAN ROOM</text><text x="590" y="626" text-anchor="middle" font-size="11" fill="#eaf7fd">Collaboration API (SAMOOHA)</text><text x="590" y="644" text-anchor="middle" font-size="11" fill="#eaf7fd">join por SHA2(email)</text><g class="ok"><circle cx="686" cy="579" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="686" y="583" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="audb"><rect x="845" y="585" width="190" height="62" rx="8" fill="#D5F5E3" stroke="#27AE60" stroke-width="2"/><text x="940" y="610" text-anchor="middle" font-size="12" font-weight="700">Audiencia B (hash)</text><text x="940" y="628" text-anchor="middle" font-size="11" fill="#1e6b43">Padre de Mascotas</text><g class="ok"><circle cx="1031" cy="589" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="1031" y="593" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+    <g class="anode" data-k="overlap"><rect x="470" y="710" width="240" height="78" rx="10" fill="#ABEBC6" stroke="#27AE60" stroke-width="2"/><text x="590" y="736" text-anchor="middle" font-size="13" font-weight="800" fill="#145a32">Overlap = 125.000</text><text x="590" y="755" text-anchor="middle" font-size="11" fill="#145a32">Alto 13.492 · Medio 57.896 · Bajo 53.612</text><text x="590" y="772" text-anchor="middle" font-size="11" fill="#145a32">activación co-marca · App + Agente</text><g class="ok"><circle cx="706" cy="714" r="10" fill="#2E7D32" stroke="#fff" stroke-width="2"/><text x="706" y="718" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text></g></g>
+
+    <path d="M722,294 C722,470 245,470 245,583" fill="none" stroke="#29B5E8" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrb)"/>
+    <text x="300" y="462" font-size="10.5" fill="#0E6F9A">audiencia hash (A)</text>
+    <path d="M995,212 C995,440 940,440 940,583" fill="none" stroke="#27AE60" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arr)"/>
+    <path d="M340,616 L488,612" fill="none" stroke="#5C6B78" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M845,616 L692,612" fill="none" stroke="#5C6B78" stroke-width="2" marker-end="url(#arr)"/>
+    <path d="M590,659 L590,708" fill="none" stroke="#5C6B78" stroke-width="2" marker-end="url(#arr)"/>
+  </svg>
+  <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">Bronze (CRM·EVENTS) · Silver · Gold · ML/Consumo (azul) · Gobierno (morado) · Clean Room/Marca B (verde). <b>SILVER → ML → GOLD</b>; SEGMENTS/GOBIERNO/APP consumen GOLD.</p>
   <h3>Qué crea cada paso</h3>
   <table style="width:100%;border-collapse:collapse;font-size:13px">
     <tr style="background:var(--highlight)"><th style="text-align:left;padding:7px 10px;border:1px solid var(--border);width:13%">Paso</th><th style="text-align:left;padding:7px 10px;border:1px solid var(--border);width:32%">Qué crea</th><th style="text-align:left;padding:7px 10px;border:1px solid var(--border)">Qué se hace y para qué</th></tr>
@@ -488,6 +537,24 @@ function go(i){
       }).catch(()=>{btn.textContent="Error";});
     };
   });
+  // arquitectura: chulitos de progreso (persistente)
+  const aKEY="havasArqDone";
+  let aDone={}; try{aDone=JSON.parse(localStorage.getItem(aKEY)||"{}")}catch(e){aDone={}}
+  const aNodes=content.querySelectorAll(".anode");
+  const aCount=content.querySelector("#arqCount");
+  const aUpd=()=>{ if(aCount){const n=Object.values(aDone).filter(Boolean).length; aCount.textContent=n+" / "+aNodes.length+" completados";} };
+  aNodes.forEach(nd=>{
+    const k=nd.getAttribute("data-k");
+    if(aDone[k]) nd.classList.add("on");
+    nd.addEventListener("click",()=>{
+      const v=!nd.classList.contains("on");
+      nd.classList.toggle("on",v); aDone[k]=v;
+      localStorage.setItem(aKEY,JSON.stringify(aDone)); aUpd();
+    });
+  });
+  aUpd();
+  const aReset=content.querySelector("#arqReset");
+  if(aReset) aReset.onclick=()=>{ aDone={}; localStorage.removeItem(aKEY); aNodes.forEach(n=>n.classList.remove("on")); aUpd(); };
   window.scrollTo({top:0,behavior:"smooth"});
   if(location.hash!=="#"+parts[cur].id) history.replaceState(null,"","#"+parts[cur].id);
 }
