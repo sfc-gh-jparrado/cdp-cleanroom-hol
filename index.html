@@ -184,16 +184,15 @@ const parts = [
     <tr style="background:var(--highlight)"><th style="text-align:left;padding:7px 10px;border:1px solid var(--border);width:13%">Paso</th><th style="text-align:left;padding:7px 10px;border:1px solid var(--border);width:32%">Qué crea</th><th style="text-align:left;padding:7px 10px;border:1px solid var(--border)">Qué se hace y para qué</th></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">1 Setup</td><td style="padding:6px 10px;border:1px solid var(--border)">Warehouse + base + 6 esquemas (A)</td><td style="padding:6px 10px;border:1px solid var(--border)">Prepara el contenedor (cómputo + esquemas) donde vivirá el CDP.</td></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">2 Ingesta</td><td style="padding:6px 10px;border:1px solid var(--border)">RAW.HUBSPOT_CONTACTS (~512k crudas)</td><td style="padding:6px 10px;border:1px solid var(--border)">Trae el export crudo del CRM tal cual (con duplicados) al lago de datos.</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">3 Customer 360</td><td style="padding:6px 10px;border:1px solid var(--border)">GOLD.CUSTOMER_360 (500k limpios)</td><td style="padding:6px 10px;border:1px solid var(--border)">Limpia y unifica: una sola ficha por cliente, conservando el dato más reciente.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">3 Customer 360 + Identidad</td><td style="padding:6px 10px;border:1px solid var(--border)">GOLD.CUSTOMER_360 + GOLD.IDENTITY_GRAPH</td><td style="padding:6px 10px;border:1px solid var(--border)">Limpia, unifica y resuelve identidades: una ficha por persona (quita duplicados y enlaza el mismo teléfono).</td></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">4 Enriquecimiento</td><td style="padding:6px 10px;border:1px solid var(--border)">EVENTS: WEB_EVENTS / PURCHASES / AD_EXPOSURE</td><td style="padding:6px 10px;border:1px solid var(--border)">Agrega comportamiento (navegación, compras, anuncios) para poder predecir.</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">5 Identity</td><td style="padding:6px 10px;border:1px solid var(--border)">GOLD.IDENTITY_GRAPH + GOLD.IDENTITY_SUMMARY</td><td style="padding:6px 10px;border:1px solid var(--border)">Detecta qué registros distintos son la misma persona (mismo teléfono).</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">6 Propensión</td><td style="padding:6px 10px;border:1px solid var(--border)">MODELO_PROPENSION + CUSTOMER_SCORES</td><td style="padding:6px 10px;border:1px solid var(--border)">Modelo ML que puntúa quién es más propenso a comprar (tier Alto/Medio/Bajo).</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">7 Segmentación</td><td style="padding:6px 10px;border:1px solid var(--border)">SEGMENTS (SPs, segmento, ROI) + lookalikes</td><td style="padding:6px 10px;border:1px solid var(--border)">Crea audiencias, simula su ROI y las expande con clientes similares (lookalikes).</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">8 Semántica</td><td style="padding:6px 10px;border:1px solid var(--border)">APP.SV_CDP + Agente Cortex</td><td style="padding:6px 10px;border:1px solid var(--border)">Permite preguntar al CDP en lenguaje natural (español), con respuestas y gráficos.</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">9 Gobierno</td><td style="padding:6px 10px;border:1px solid var(--border)">Masking + row access + roles</td><td style="padding:6px 10px;border:1px solid var(--border)">Protege la PII (enmascara) y respeta el consentimiento de marketing por fila.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">5 Propensión</td><td style="padding:6px 10px;border:1px solid var(--border)">MODELO_PROPENSION + CUSTOMER_SCORES</td><td style="padding:6px 10px;border:1px solid var(--border)">Modelo ML que puntúa quién es más propenso a comprar (tier Alto/Medio/Bajo).</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">6 Segmentación</td><td style="padding:6px 10px;border:1px solid var(--border)">SEGMENTS (SPs, segmento, ROI) + lookalikes</td><td style="padding:6px 10px;border:1px solid var(--border)">Crea audiencias, simula su ROI y las expande con clientes similares (lookalikes).</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">7 Semántica</td><td style="padding:6px 10px;border:1px solid var(--border)">APP.SV_CDP + Agente Cortex</td><td style="padding:6px 10px;border:1px solid var(--border)">Permite preguntar al CDP en lenguaje natural (español), con respuestas y gráficos.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">8 Gobierno</td><td style="padding:6px 10px;border:1px solid var(--border)">Masking + row access + roles</td><td style="padding:6px 10px;border:1px solid var(--border)">Protege la PII (enmascara) y respeta el consentimiento de marketing por fila.</td></tr>
     <tr><td style="padding:6px 10px;border:1px solid var(--border)">Marca B</td><td style="padding:6px 10px;border:1px solid var(--border)">Audiencia hasheada (pre-lista)</td><td style="padding:6px 10px;border:1px solid var(--border)">La marca socia llega con su lista de clientes ya cifrada, lista para el cruce.</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">10 Clean Room</td><td style="padding:6px 10px;border:1px solid var(--border)">Colaboración A↔B + overlap 125.000</td><td style="padding:6px 10px;border:1px solid var(--border)">Las dos marcas descubren sus clientes en común sin que ninguna comparta PII.</td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid var(--border)">11 App</td><td style="padding:6px 10px;border:1px solid var(--border)">Servicio SPCS + URL SSO</td><td style="padding:6px 10px;border:1px solid var(--border)">Cierra con una app visual (URL propia) para explorar y presentar a negocio.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">9 Clean Room</td><td style="padding:6px 10px;border:1px solid var(--border)">Colaboración A↔B + overlap 125.000</td><td style="padding:6px 10px;border:1px solid var(--border)">Las dos marcas descubren sus clientes en común sin que ninguna comparta PII.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">10 App</td><td style="padding:6px 10px;border:1px solid var(--border)">Servicio SPCS + URL SSO</td><td style="padding:6px 10px;border:1px solid var(--border)">Cierra con una app visual (URL propia) para explorar y presentar a negocio.</td></tr>
   </table>
  `},
  {id:"p1", grp:"CDP · Marca A", title:"1 · Setup de bases y esquemas", html:`
@@ -218,12 +217,18 @@ const parts = [
   <div class="res-line"><span class="pill res">RESULTADO</span>RAW.HUBSPOT_CONTACTS poblada con ~512.010 filas crudas (~12.000 correos duplicados). <i>La Marca B ya llega lista — no se carga aquí.</i></div>
   <div class="gotcha"><b>Gotcha:</b> las columnas ya vienen en SNAKE_CASE. La normalización (email minúscula/trim, teléfono solo dígitos, parseo de FECHA_CREACION con <code class="inl">DD/MM/YYYY HH24:MI</code>) y la deduplicación se hacen en la Parte 3.</div>
  `},
- {id:"p3", grp:"CDP · Marca A", title:"3 · Customer 360", html:`
-  <h2><span class="num">3</span>Customer 360</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>De export crudo a una ficha limpia por cliente: normalizar y deduplicar.</div>
-  <div class="biz"><span class="lbl">PARA NEGOCIO</span>El mismo cliente puede venir duplicado en el CRM. El CDP lo unifica conservando el registro <b>más reciente</b>: el conteo baja de <b>512.010 filas crudas a 500.010 clientes únicos</b>, y cada cliente queda con su estado actualizado (p. ej. uno que ya pasó de Prospecto a Cliente).</div>
+ {id:"p3", grp:"CDP · Marca A", title:"3 · Customer 360 + Identidad", html:`
+  <h2><span class="num">3</span>Customer 360 + Resolución de identidad</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>De export crudo a una ficha limpia y <b>unificada</b> por cliente: normalizar, deduplicar y resolver identidades.</div>
+  <div class="biz"><span class="lbl">PARA NEGOCIO</span>Unificamos al mismo cliente en dos niveles: (1) el <b>mismo registro repetido</b> en el CRM (mismo correo) y (2) <b>registros distintos que son la misma persona</b> (comparten teléfono o cédula). Así no contamos ni contactamos dos veces a nadie. El conteo baja de <b>512.010 filas crudas a 500.010 clientes únicos</b>, cada uno con su estado más reciente.</div>
+  <h3>3a · Normalizar y deduplicar</h3>
   ${prompt("Prompt CoCo","Sobre RAW.HUBSPOT_CONTACTS crea la tabla limpia GOLD.CUSTOMER_360:\n- email en minúscula y trim; teléfono solo dígitos; nombre = NOMBRE || ' ' || APELLIDOS\n- una fila por cliente, deduplicando por email (conserva el registro más reciente por FECHA_CREACION, parseada con DD/MM/YYYY HH24:MI)\n- columnas: customer_id (CONTACT_ID), cedula, email, telefono, nombre, genero, ciudad, lifecycle_stage (ESTADO_LEAD), tipo_cliente, mascota, consent_marketing (= ESTADO_MARKETING = 'Contacto de marketing'), fecha_creacion\nMaterialízala como tabla GOLD.CUSTOMER_360. Repórtame filas crudas vs clientes únicos finales y un ejemplo de un cliente cuyo duplicado fue resuelto (quedó con el estado más reciente).")}
-  <div class="res-line"><span class="pill res">RESULTADO</span>GOLD.CUSTOMER_360 = <b>500.010</b> clientes únicos (de 512.010 crudas) — ~12.000 duplicados resueltos conservando el registro más reciente.</div>
+  <div class="res-line"><span class="pill res">RESULTADO</span>GOLD.CUSTOMER_360 = <b>500.010</b> clientes únicos (de 512.010 crudas) — ~12.000 duplicados exactos resueltos conservando el registro más reciente.</div>
+  <h3>3b · Resolución de identidad (misma persona, registros distintos)</h3>
+  <div class="biz"><span class="lbl">PARA NEGOCIO</span>Dos contactos con correos diferentes pero el <b>mismo teléfono</b> suelen ser la misma persona o el mismo hogar. Los enlazamos bajo un <code class="inl">person_id</code> para una vista única real.</div>
+  ${prompt("Prompt CoCo","Sobre GOLD.CUSTOMER_360 construye GOLD.IDENTITY_GRAPH resolviendo a un person_id canónico: fusiona clientes que comparten teléfono o cédula (el person_id = el menor customer_id del grupo). NO fusiones por nombre (alta cardinalidad → componentes gigantes). Crea GOLD.IDENTITY_SUMMARY con person_id, nº de customers fusionados y nº de identificadores (sin depender de eventos). Dame ejemplos de fusiones.")}
+  <div class="gotcha"><b>Gotcha:</b> en estos datos email y cédula son únicos; las fusiones reales vienen de <b>teléfonos compartidos</b> (~139). No enlaces por nombre normalizado: con ~134k nombres en 500k filas generaría un componente gigante. <b>3a vs 3b:</b> 3a quita el <i>mismo registro repetido</i>; 3b enlaza <i>registros distintos de la misma persona</i>.</div>
+  <div class="res-line"><span class="pill res">RESULTADO</span>GOLD.IDENTITY_GRAPH + GOLD.IDENTITY_SUMMARY (alimenta la pantalla force-directed de la app).</div>
  `},
  {id:"p4", grp:"CDP · Marca A", title:"4 · Enriquecimiento sintético", html:`
   <h2><span class="num">4</span>Enriquecimiento sintético de comportamiento</h2>
@@ -233,24 +238,16 @@ const parts = [
   <div class="res-line"><span class="pill res">RESULTADO</span>3 tablas de eventos con señal.</div>
   <div class="gotcha"><b>Gotcha:</b> si features y target son aleatorios independientes, el modelo colapsa al base rate. El engagement latente crea la señal.</div>
  `},
- {id:"p5", grp:"CDP · Marca A", title:"5 · Identity Resolution", html:`
-  <h2><span class="num">5</span>Identity Resolution</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Resolver identidades a un person_id canónico.</div>
-  <div class="biz"><span class="lbl">PARA NEGOCIO</span>Unificamos registros que son la misma persona (mismo teléfono) para no contar ni contactar dos veces al mismo cliente.</div>
-  ${prompt("Prompt CoCo","Construye GOLD.IDENTITY_GRAPH resolviendo a un person_id canónico: fusiona clientes que comparten teléfono o cédula (el person_id = el menor customer_id del grupo). NO fusiones por nombre (alta cardinalidad → componentes gigantes). Crea GOLD.IDENTITY_SUMMARY con person_id, nº de customers fusionados, nº de identificadores y canales (de WEB_EVENTS). Dame ejemplos de fusiones.")}
-  <div class="gotcha"><b>Gotcha:</b> en estos datos email y cédula son únicos; las fusiones reales vienen de <b>teléfonos compartidos</b> (~139). No enlaces por nombre normalizado: con ~134k nombres en 500k filas generaría un componente gigante.</div>
-  <div class="res-line"><span class="pill res">RESULTADO</span>Grafo de identidad + resumen (alimenta la pantalla force-directed de la app).</div>
- `},
- {id:"p6", grp:"CDP · Marca A", title:"6 · Propensión (ML)", html:`
-  <h2><span class="num">6</span>Modelo de propensión (ML)</h2>
+ {id:"p6", grp:"CDP · Marca A", title:"5 · Propensión (ML)", html:`
+  <h2><span class="num">5</span>Modelo de propensión (ML)</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Puntuar propensión a comprar y tier por cliente.</div>
   <div class="biz"><span class="lbl">PARA NEGOCIO</span>Un puntaje por cliente de quién está listo para comprar. En la demo, los 'Alto' compran ~4× más que los 'Bajo' (57% vs 13%).</div>
   ${prompt("Prompt CoCo","Entrena GOLD.MODELO_PROPENSION con SNOWFLAKE.ML.CLASSIFICATION. Target: compró en últimos 30 días. Features: recencia, frecuencia, sesiones, CTR, ticket promedio (todas previas a la ventana de 30 días). Genera GOLD.CUSTOMER_SCORES con probabilidad clase 1 y tier Alto/Medio/Bajo. Reporta F1 y la separación de tiers.")}
   <div class="res-line"><span class="pill res">RESULTADO</span>Scores por cliente + tiers separados.</div>
   <div class="gotcha"><b>Gotcha !PREDICT:</b> las llaves del OBJECT_CONSTRUCT deben ir en MAYÚSCULA e idénticas al nombre de columna; si no, las features entran NULL y todos caen en un tier. Probabilidad = <code class="inl">pred.p:probability:"1"::FLOAT</code>. Ejecuta el PREDICT <b>desde archivo</b> (<code class="inl">snow sql -f</code>), NO con <code class="inl">-q</code>: zsh interpreta el <code class="inl">!</code> de <code class="inl">!PREDICT</code>. Sube el warehouse a <code class="inl">MEDIUM</code> para entrenar (500k filas) y vuelve a <code class="inl">XSMALL</code> al terminar.</div>
  `},
- {id:"p7", grp:"CDP · Marca A", title:"7 · Segmentación, ROI y Lookalikes", html:`
-  <h2><span class="num">7</span>Segmentación, ROI y Lookalikes</h2>
+ {id:"p7", grp:"CDP · Marca A", title:"6 · Segmentación, ROI y Lookalikes", html:`
+  <h2><span class="num">6</span>Segmentación, ROI y Lookalikes</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Materializar segmentos y simular ROI de activación.</div>
   <div class="biz"><span class="lbl">PARA NEGOCIO</span>Creamos audiencias con una regla y simulamos cuánto rinde cada campaña <i>antes</i> de gastar: el correo dirigido rinde 11.9× vs 1.04× del masivo.</div>
   ${prompt("Prompt CoCo — segmentos + ROI","Crea SEGMENTS.SP_CREAR_SEGMENTO(nombre, descripcion, predicado) que materialice miembros desde un WHERE sobre GOLD.CUSTOMER_360 enriquecida con scores. Crea SEGMENTS.SP_ACTIVAR_SEGMENTO(id, destino) que respete consentimiento y simule ROI (paid ~$9.50/persona, email ~$0.50/persona, AOV mascotas ~$35, conversión = propensión * factor). Crea un segmento de ejemplo \"Dueños alta propensión\" y actívalo.")}
@@ -259,8 +256,8 @@ const parts = [
   <div class="res-line"><span class="pill res">RESULTADO</span>SPs de segmentación + un segmento activado con ROI + lookalikes con propensión 1.6× la base.</div>
   <div class="gotcha"><b>Gotcha:</b> envuelve el cuerpo del procedimiento en $$...$$. En INSERT...VALUES no uses aritmética sobre variables; precalcula en una variable.</div>
  `},
- {id:"p9", grp:"CDP · Marca A", title:"8 · Vista semántica + Agente", html:`
-  <h2><span class="num">8</span>Vista semántica + Agente Cortex</h2>
+ {id:"p9", grp:"CDP · Marca A", title:"7 · Vista semántica + Agente", html:`
+  <h2><span class="num">7</span>Vista semántica + Agente Cortex</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Habilitar preguntas en lenguaje natural sobre el CDP.</div>
   <div class="biz"><span class="lbl">PARA NEGOCIO</span>Cualquiera le pregunta al CDP en español (“¿cuántos clientes de alta propensión hay en Bogotá?”) y obtiene la respuesta con gráfico, sin saber SQL.</div>
   ${prompt("Prompt CoCo — vista semántica","Crea APP.SV_CDP (semantic view en español) sobre GOLD.CUSTOMER_360 + scores: dimensiones (ciudad, lifecycle_stage, tier, género si existe), métricas ratio (tasa_consentimiento, pct_alta_propension, clientes_activables). Pon valores válidos en los COMMENT para que Analyst mapee literales. Valídala con una pregunta de ejemplo.")}
@@ -268,8 +265,8 @@ const parts = [
   <div class="res-line"><span class="pill res">RESULTADO</span>Vista semántica validada + agente conversacional.</div>
   <div class="gotcha"><b>Gotcha:</b> en CREATE SEMANTIC VIEW el orden es obligatorio TABLES, FACTS, DIMENSIONS, METRICS. Sintaxis: <code class="inl">tabla.&lt;nombre_logico&gt; AS &lt;columna_o_expr&gt;</code>.</div>
  `},
- {id:"p10", grp:"Gobierno", title:"9 · Gobierno (masking + consentimiento)", html:`
-  <h2><span class="num">9</span>Gobierno (masking + consentimiento)</h2>
+ {id:"p10", grp:"Gobierno", title:"8 · Gobierno (masking + consentimiento)", html:`
+  <h2><span class="num">8</span>Gobierno (masking + consentimiento)</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Proteger PII y respetar consentimiento por fila.</div>
   <div class="biz"><span class="lbl">PARA NEGOCIO</span>Los datos personales quedan enmascarados y sólo usamos clientes con consentimiento: privacidad y cumplimiento por diseño.</div>
   ${prompt("Prompt CoCo","En GOBIERNO crea: masking policies para email, teléfono y nombre (idempotentes); una row access policy de consentimiento (no-admin solo ve consent_marketing=TRUE). Aplica masking a GOLD.CUSTOMER_360. Crea roles CDP_ADMIN / CDP_ANALISTA y otórgalos a jparrado. Demuestra el masking con USE SECONDARY ROLES NONE.")}
@@ -284,24 +281,116 @@ const parts = [
   <div class="res-line"><span class="pill res">RESULTADO</span>Marca B confirmada lista: audiencia hasheada de 500.010 (sin PII), persistente entre corridas — solo falta integrarla en el Clean Room (Parte 10).</div>
   <div class="gotcha"><b>Por qué pre-lista y mínima:</b> el overlap por tier usa el tier de la <b>Marca A</b>; el de B no se usa. B se prepara una sola vez (RAW → CUSTOMER_360 → audiencia hasheada) y queda persistente; no necesita eventos, modelo ni scores. Se evita duplicar el CDP en cada cuenta.</div>
  `},
- {id:"p11", grp:"Clean Room", title:"10 · Data Clean Room cross-account", html:`
-  <h2><span class="num">10</span>Data Clean Room cross-account</h2>
+ {id:"p11", grp:"Clean Room", title:"9 · Data Clean Room cross-account", html:`
+  <h2><span class="num">9</span>Data Clean Room cross-account</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>A y B encuentran clientes en común y activan sin compartir PII. Usa el skill <code class="inl">data-cleanrooms</code> de CoCo.</div>
   <div class="biz"><span class="lbl">PARA NEGOCIO</span>El momento clave: dos marcas descubren <b>125.000 clientes en común</b> (13.412 de alta propensión) sin que ninguna vea los correos de la otra.</div>
   ${prompt("Prompt CoCo — verificación + RBAC (A y B)","Verifica que Data Clean Rooms esté instalado (SHOW DATABASES LIKE 'SAMOOHA_BY_SNOWFLAKE_LOCAL_DB%'). Con ACCOUNTADMIN, otorga al rol CDP_ADMIN los privilegios de cuenta necesarios para crear/ver colaboraciones, registrar offerings y ejecutar análisis. Lista los privilegios otorgados.")}
   ${prompt("Prompt CoCo — audiencia NO-PII (Cuenta A)","Crea GOBIERNO.AUDIENCIA_CLEANROOM en la Marca A: una fila por cliente con SHA2(email_normalizado) AS HASHED_EMAIL, más atributos NO identificables (tier de propensión, ciudad, lifecycle_stage, flag consentimiento). Sin email/teléfono/nombre en claro. (La Marca B ya creó la suya en su paso mínimo.)")}
+  ${prompt("Código exacto — audiencia NO-PII (Cuenta A)",`CREATE OR REPLACE TABLE TIENDA_CEBA_CDP.GOBIERNO.AUDIENCIA_CLEANROOM AS
+SELECT SHA2(c.email,256)   AS HASHED_EMAIL,
+       s.tier              AS TIER_PROPENSION,
+       c.ciudad            AS CITY,
+       c.lifecycle_stage   AS LIFECYCLE_STAGE,
+       c.consent_marketing AS CONSENT_MARKETING
+FROM TIENDA_CEBA_CDP.GOLD.CUSTOMER_360 c
+JOIN TIENDA_CEBA_CDP.GOLD.CUSTOMER_SCORES s USING(customer_id);`)}
   ${prompt("Prompt CoCo — registrar offerings (A y B)","Usando data-cleanrooms, registra cada audiencia como data offering: en A registra GOBIERNO.AUDIENCIA_CLEANROOM (HASHED_EMAIL como join key, activation_allowed) y en B la suya. USE SECONDARY ROLES NONE antes de REGISTER y ALL después.")}
+  ${prompt("Código exacto — registrar offering (Cuenta A)",`USE ROLE ACCOUNTADMIN;
+USE SECONDARY ROLES NONE;
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.REGISTRY.REGISTER_DATA_OFFERING($$
+api_version: 2.0.0
+spec_type: data_offering
+name: AUDIENCIA_CEBA
+version: "v1"
+description: Audiencia NO-PII de Tienda Ceba (hashed email + tier + ciudad)
+datasets:
+  - alias: audiencia
+    data_object_fqn: TIENDA_CEBA_CDP.GOBIERNO.AUDIENCIA_CLEANROOM
+    allowed_analyses: template_only
+    object_class: custom
+    schema_and_template_policies:
+      HASHED_EMAIL:
+        category: join_standard
+        column_type: hashed_email_sha256
+        activation_allowed: true
+      TIER_PROPENSION: { category: passthrough }
+      CITY:            { category: passthrough }
+      LIFECYCLE_STAGE: { category: passthrough }
+      CONSENT_MARKETING: { category: passthrough }
+$$);
+USE SECONDARY ROLES ALL;
+-- En la Cuenta B (demo_account_aws_2): misma llamada con
+--   name: AUDIENCIA_PADRE   y   data_object_fqn: PADRE_MASCOTAS_CDP.GOBIERNO.AUDIENCIA_CLEANROOM`)}
   ${prompt("Prompt CoCo — registrar template (Cuenta A)","Usando data-cleanrooms, registra con REGISTER_TEMPLATE un template de análisis CUSTOM que cuente el overlap por tier; referencia la columna de join como hashed_email_sha256 (NO hashed_email). Es el análisis que correremos en el clean room.")}
+  ${prompt("Código exacto — template custom (Cuenta A)",`USE ROLE ACCOUNTADMIN;
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.REGISTRY.REGISTER_TEMPLATE($$
+api_version: 2.0.0
+spec_type: template
+name: mascotas_overlap_by_tier
+version: "v1"
+type: sql_analysis
+description: Overlap A x B por tier de propension (hashed emails en comun)
+template: |
+  SELECT a.TIER_PROPENSION AS tier,
+         COUNT(DISTINCT a.hashed_email_sha256) AS overlap_count
+  FROM IDENTIFIER({{ source_table[0] }}) a
+  INNER JOIN IDENTIFIER({{ source_table[1] }}) b
+    ON a.hashed_email_sha256 = b.hashed_email_sha256
+  GROUP BY a.TIER_PROPENSION
+  ORDER BY overlap_count DESC
+$$);`)}
   ${prompt("Prompt CoCo — crear colaboración (Cuenta A)","Usando data-cleanrooms, crea la colaboración cross-account \"MASCOTAS_OVERLAP\": A (esta) Owner + Data Provider + Analysis Runner y B (SFSENORTHAMERICA.DEMO_JPARRADO2) Data Provider. Incluye en el spec ambos offerings y el template de overlap por tier. Confírmame el spec antes de inicializar.")}
+  ${prompt("Código exacto — crear colaboración (Cuenta A)",`USE ROLE ACCOUNTADMIN;
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.INITIALIZE($$
+api_version: "2.0.0"
+spec_type: collaboration
+name: MASCOTAS_OVERLAP
+description: Overlap cross-account de clientes de mascotas sin compartir PII
+collaborator_identifier_aliases:
+  TIENDA_CEBA: SFSENORTHAMERICA.DEMO_JPARRADO
+  PADRE_MASCOTAS: SFSENORTHAMERICA.DEMO_JPARRADO2
+owner: TIENDA_CEBA
+analysis_runners:
+  TIENDA_CEBA:
+    data_providers:
+      TIENDA_CEBA:
+        data_offerings:
+          - id: AUDIENCIA_CEBA_v1
+      PADRE_MASCOTAS:
+        data_offerings:
+          - id: AUDIENCIA_PADRE_v1
+    templates:
+      - id: mascotas_overlap_by_tier_v1
+$$);`)}
   ${prompt("Prompt CoCo — unirse (Cuenta B)","Usando data-cleanrooms, revisa la invitación y únete a \"MASCOTAS_OVERLAP\". Al unirse, B acepta el template incluido en el spec (no hace falta aprobación aparte).")}
+  ${prompt("Código exacto — unirse (Cuenta B)",`USE ROLE ACCOUNTADMIN;
+USE SECONDARY ROLES NONE;
+CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.JOIN('MASCOTAS_OVERLAP');
+USE SECONDARY ROLES ALL;`)}
   ${prompt("Prompt CoCo — ejecutar overlap (Cuenta A runner)","Usando data-cleanrooms, ejecuta el template sobre las dos audiencias (con tamaño mínimo de grupo / k-anonymity). Resúmeme: overlap total, % sobre cada base y desglose por tier de propensión de A.")}
+  ${prompt("Código exacto — ejecutar overlap (Cuenta A runner)",`CALL SAMOOHA_BY_SNOWFLAKE_LOCAL_DB.COLLABORATION.RUN('MASCOTAS_OVERLAP', $$
+api_version: "2.0.0"
+spec_type: "analysis"
+name: "overlap_mascotas_por_tier"
+description: "Overlap A x B por tier sobre hashed_email"
+template: "mascotas_overlap_by_tier_v1"
+template_configuration:
+  view_mappings:
+    source_tables:
+      - "TIENDA_CEBA.AUDIENCIA_CEBA_v1.audiencia"
+      - "PADRE_MASCOTAS.AUDIENCIA_PADRE_v1.audiencia"
+  local_view_mappings:
+    my_tables: []
+  arguments: {}
+$$);`)}
   <p><span class="pill gui">GUI</span>Snowsight → Data Clean Rooms → Create → añade Cuenta B como invitada.</p>
   <div class="res-line"><span class="pill res">RESULTADO</span>Overlap agregado por tier, sin que A vea los emails de B. Mensaje: campañas co-marca sobre clientes compartidos de alta propensión sin que ninguna marca entregue su CRM.</div>
   <div class="gotcha"><b>Gotchas:</b> la columna de join se expone con el nombre del tipo (<code class="inl">hashed_email_sha256</code>), no <code class="inl">hashed_email</code> — el template debe referenciar ese nombre. Incluye el template en el spec del INITIALIZE para que B lo acepte al unirse (o añádelo luego con <code class="inl">ADD_TEMPLATE_REQUEST</code> + <code class="inl">APPROVE_UPDATE_REQUEST</code> en B). Usa <code class="inl">USE SECONDARY ROLES NONE</code> antes de REGISTER/JOIN/LINK y <code class="inl">ALL</code> después. La activación directa al runner puede fallar con <code class="inl">ACTIVATION_DATA_… does not exist</code> (borde de auto-activación); el overlap agregado por tier es el entregable central. Nunca consultes tablas internas de SAMOOHA; solo procedimientos CALL.</div>
   <div class="res-line"><span class="pill res">VALIDADO</span>Overlap real A∩B = <b>125.000</b> (25% de cada base) · por tier de A: Alto <b>13.412</b>, Medio 57.478, Bajo 54.110 — computado en el clean room sin compartir PII.</div>
  `},
- {id:"p12", grp:"App", title:"11 · App React + SPCS", html:`
-  <h2><span class="num">11</span>App React + SPCS</h2>
+ {id:"p12", grp:"App", title:"10 · App React + SPCS", html:`
+  <h2><span class="num">10</span>App React + SPCS</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Visualizar CDP + Clean Room en una app con URL pública SSO.</div>
   <div class="biz"><span class="lbl">PARA NEGOCIO</span>Todo lo anterior en una app visual con URL propia, para que negocio lo explore y lo presente sin tocar SQL.</div>
   ${prompt("Prompt CoCo — snapshots","Exporta a app/public/data/ los snapshots JSON que necesita la app:\n- kpis.json, tiers.json (de GOLD.CUSTOMER_SCORES)\n- customers.json: muestra de 8000 clientes con score y tier\n- identity.json: aristas para el grafo (ARRAY PLANO)\n- overlap.json: resultado del clean room (overlap, %, lift)\n- roi.json: de SEGMENTS.ACTIVACIONES (Masivo/paid vs Dirigido-CDP/email)\nUsa snow sql --format json -q \"...\" 1>archivo (NO uses USE WAREHOUSE en el -q).")}
@@ -311,8 +400,8 @@ const parts = [
   <div class="res-line"><span class="pill res">RESULTADO</span>URL pública <code class="inl">https://&lt;hash&gt;-sfsenorthamerica-demo-jparrado.snowflakecomputing.app</code></div>
   <div class="gotcha"><b>Gotcha App.jsx:</b> los snapshots de array (customers.json, identity.json) deben ser arrays planos [...], NO {"identity":[...]}; si se envuelven, d3.group revienta y la app queda en blanco. El hash de la URL cambia si recreas el servicio con un spec distinto; reusa el mismo spec. <b>Red:</b> con VPN, Docker Hub/gcr.io suelen estar bloqueados — construye la imagen FROM una base ya cacheada del registry SPCS (Kaniko tampoco sirve si no puedes bajar su executor).</div>
  `},
- {id:"p13", grp:"Cierre", title:"12 · Cleanup", html:`
-  <h2><span class="num">12</span>Cleanup</h2>
+ {id:"p13", grp:"Cierre", title:"11 · Cleanup", html:`
+  <h2><span class="num">11</span>Cleanup</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Apagar consumo al terminar la demo, dejando la Marca B lista para la próxima corrida.</div>
   ${prompt("Prompt CoCo","Limpia SOLO la Marca A y el clean room: ALTER SERVICE ... SUSPEND y DROP SERVICE CDP_APP_SERVICE; DROP COMPUTE POOL CDP_POOL; DROP IMAGE REPOSITORY TIENDA_CEBA_CDP.APP.IMAGES; desmonta la colaboración del clean room (teardown en A / leave en B vía data-cleanrooms); y DROP DATABASE TIENDA_CEBA_CDP. NO borres PADRE_MASCOTAS_CDP ni su audiencia (la Marca B debe quedar lista). Confírmame qué se va a borrar antes de ejecutar.")}
   <div class="res-line"><span class="pill res">RESULTADO</span>Servicio, compute pool, repo y base de A eliminados + colaboración desmontada; sin consumo residual. <b>La Marca B (audiencia hasheada) permanece lista</b> para la siguiente corrida.</div>
@@ -321,11 +410,11 @@ const parts = [
   <h2>Guion de presentación (narrativa)</h2>
   <ol>
     <li><b>Problema:</b> dos marcas de mascotas con su CRM en HubSpot quieren campañas conjuntas sin intercambiar PII.</li>
-    <li><b>Composable CDP — Marca A (Partes 3-8):</b> una marca activa su CDP completo (360, propensión, segmentos, lookalikes, agente) en su propia cuenta. <b>La Marca B solo prepara su lista hasheada</b> — no replica el CDP.</li>
-    <li><b>Gobierno (Parte 9):</b> masking + consentimiento por fila = privacidad por diseño.</li>
-    <li><b>Clean Room (Parte 10):</b> A y B descubren su overlap con k-anonymity; nadie ve los emails del otro.</li>
+    <li><b>Composable CDP — Marca A (Partes 3-7):</b> una marca activa su CDP completo (360+identidad, propensión, segmentos, lookalikes, agente) en su propia cuenta. <b>La Marca B solo prepara su lista hasheada</b> — no replica el CDP.</li>
+    <li><b>Gobierno (Parte 8):</b> masking + consentimiento por fila = privacidad por diseño.</li>
+    <li><b>Clean Room (Parte 9):</b> A y B descubren su overlap con k-anonymity; nadie ve los emails del otro.</li>
     <li><b>Activación + ROI:</b> campaña co-marca solo sobre el overlap de alta propensión → mayor ROAS, menor CPA vs masivo.</li>
-    <li><b>App + Agente (Parte 11):</b> cierre visual e interactivo en lenguaje natural.</li>
+    <li><b>App + Agente (Parte 10):</b> cierre visual e interactivo en lenguaje natural.</li>
   </ol>
   <h3>Apéndice — Gotchas heredados</h3>
   <ul>
