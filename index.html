@@ -136,13 +136,13 @@ const parts = [
       </ul>
     </li>
     <li>Data Clean Rooms instalado en ambas (<code class="inl">SAMOOHA_BY_SNOWFLAKE_LOCAL_DB</code>).</li>
-    <li>snow CLI y Docker. Los CRM de cada marca ya existen como tablas (Parte 2) — no se cargan CSV. <i>El warehouse dedicado de la demo se crea en la Parte 1 — no se reutiliza ninguno existente.</i></li>
+    <li>snow CLI y Docker. <b>Momento cero:</b> la Marca A inicia con un export crudo <code class="inl">HAVAS_CEBA_DEMO.PUBLIC.TIENDA_CEBA_CRUDO</code> (~512.010 filas, con ~12.000 duplicados); la Marca B ya está <b>pre-provisionada</b> (audiencia hasheada lista). El warehouse dedicado se crea en la Parte 1.</li>
     <li><b>Escala:</b> ~500.010 contactos por marca. El warehouse arranca en XSMALL; sólo el entrenamiento del modelo (Parte 6) sube a MEDIUM y luego vuelve a XSMALL.</li>
     <li><b>Nota de conexión:</b> usa <code class="inl">demo_account_aws_2</code> para la Cuenta B (la conexión por SSO <code class="inl">uhb57140</code> falla por configuración SAML).</li>
   </ul>
   <h3>Arquitectura y stack</h3>
   <ul>
-    <li>Ingesta: el CRM de cada marca (tabla fuente existente) → esquema RAW.</li>
+    <li>Ingesta: export crudo de la Marca A (tabla fuente) → RAW; la Marca B llega pre-lista.</li>
     <li>CDP: RAW → CDP → EVENTS → GOLD → SEGMENTS → GOBIERNO.</li>
     <li>IA: ML.CLASSIFICATION (propensión), VECTOR_COSINE_SIMILARITY (lookalikes), Cortex Analyst + agente.</li>
     <li>Clean Room: Collaboration API (SAMOOHA) cross-account A↔B sobre HASHED_EMAIL (correo hasheado SHA-256).</li>
@@ -172,6 +172,30 @@ const parts = [
   </div>
   <div class="res-line"><span class="pill res">MENSAJE</span>Colaboración entre marcas sobre clientes compartidos de alta propensión, con mayor retorno y sin que ninguna entregue su CRM.</div>
  `},
+ {id:"arq", grp:"Inicio", title:"Arquitectura", html:`
+  <h2>Arquitectura de la demo</h2>
+  <div class="biz"><span class="lbl">PARA NEGOCIO</span>La Marca A trabaja su CDP completo en su propia cuenta; la Marca B solo aporta su lista cifrada (ya lista). Se encuentran en un Clean Room neutral y los datos nunca salen de cada cuenta.</div>
+  <h3>Flujo de datos — Marca A</h3>
+  <p style="font-family:var(--font-code);font-size:12px;line-height:2.1;color:var(--sf-navy)">Export crudo ~512k → <b>RAW</b> → <b>GOLD.CUSTOMER_360</b> (500k limpios) → <b>EVENTS</b> (comportamiento) → <b>Propensión ML</b> (tiers) → <b>SEGMENTS</b> (audiencias + ROI) → <b>GOBIERNO</b> (PII + consentimiento) → audiencia hasheada</p>
+  <h3>Cross-account</h3>
+  <p style="font-family:var(--font-code);font-size:12px;line-height:2.1;color:var(--sf-navy)">Marca A (audiencia hasheada) + Marca B (audiencia hasheada · pre-lista) → <b>Data Clean Room</b> → overlap <b>125.000</b> sin PII → <b>App + Agente</b></p>
+  <h3>Qué crea cada paso</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="background:var(--highlight)"><th style="text-align:left;padding:7px 10px;border:1px solid var(--border);width:13%">Paso</th><th style="text-align:left;padding:7px 10px;border:1px solid var(--border);width:32%">Qué crea</th><th style="text-align:left;padding:7px 10px;border:1px solid var(--border)">Qué se hace y para qué</th></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">1 Setup</td><td style="padding:6px 10px;border:1px solid var(--border)">Warehouse + base + 7 esquemas (A)</td><td style="padding:6px 10px;border:1px solid var(--border)">Prepara el contenedor (cómputo + esquemas) donde vivirá el CDP.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">2 Ingesta</td><td style="padding:6px 10px;border:1px solid var(--border)">RAW.HUBSPOT_CONTACTS (~512k crudas)</td><td style="padding:6px 10px;border:1px solid var(--border)">Trae el export crudo del CRM tal cual (con duplicados) al lago de datos.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">3 Customer 360</td><td style="padding:6px 10px;border:1px solid var(--border)">GOLD.CUSTOMER_360 (500k limpios)</td><td style="padding:6px 10px;border:1px solid var(--border)">Limpia y unifica: una sola ficha por cliente, conservando el dato más reciente.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">4 Enriquecimiento</td><td style="padding:6px 10px;border:1px solid var(--border)">EVENTS: WEB_EVENTS / PURCHASES / AD_EXPOSURE</td><td style="padding:6px 10px;border:1px solid var(--border)">Agrega comportamiento (navegación, compras, anuncios) para poder predecir.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">5 Identity</td><td style="padding:6px 10px;border:1px solid var(--border)">CDP.IDENTITY_GRAPH + GOLD.IDENTITY_SUMMARY</td><td style="padding:6px 10px;border:1px solid var(--border)">Detecta qué registros distintos son la misma persona (mismo teléfono).</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">6 Propensión</td><td style="padding:6px 10px;border:1px solid var(--border)">MODELO_PROPENSION + CUSTOMER_SCORES</td><td style="padding:6px 10px;border:1px solid var(--border)">Modelo ML que puntúa quién es más propenso a comprar (tier Alto/Medio/Bajo).</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">7 Segmentación</td><td style="padding:6px 10px;border:1px solid var(--border)">SEGMENTS (SPs, segmento, ROI) + lookalikes</td><td style="padding:6px 10px;border:1px solid var(--border)">Crea audiencias, simula su ROI y las expande con clientes similares (lookalikes).</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">8 Semántica</td><td style="padding:6px 10px;border:1px solid var(--border)">APP.SV_CDP + Agente Cortex</td><td style="padding:6px 10px;border:1px solid var(--border)">Permite preguntar al CDP en lenguaje natural (español), con respuestas y gráficos.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">9 Gobierno</td><td style="padding:6px 10px;border:1px solid var(--border)">Masking + row access + roles</td><td style="padding:6px 10px;border:1px solid var(--border)">Protege la PII (enmascara) y respeta el consentimiento de marketing por fila.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">Marca B</td><td style="padding:6px 10px;border:1px solid var(--border)">Audiencia hasheada (pre-lista)</td><td style="padding:6px 10px;border:1px solid var(--border)">La marca socia llega con su lista de clientes ya cifrada, lista para el cruce.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">10 Clean Room</td><td style="padding:6px 10px;border:1px solid var(--border)">Colaboración A↔B + overlap 125.000</td><td style="padding:6px 10px;border:1px solid var(--border)">Las dos marcas descubren sus clientes en común sin que ninguna comparta PII.</td></tr>
+    <tr><td style="padding:6px 10px;border:1px solid var(--border)">11 App</td><td style="padding:6px 10px;border:1px solid var(--border)">Servicio SPCS + URL SSO</td><td style="padding:6px 10px;border:1px solid var(--border)">Cierra con una app visual (URL propia) para explorar y presentar a negocio.</td></tr>
+  </table>
+ `},
  {id:"p1", grp:"CDP · Marca A", title:"1 · Setup de bases y esquemas", html:`
   <h2><span class="num">1</span>Setup de bases y esquemas</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Crear el warehouse dedicado, la base y los esquemas de la <b>Marca A</b>. <i>La Marca B se prepara aparte, mínima.</i></div>
@@ -185,22 +209,21 @@ const parts = [
  `},
  {id:"p2", grp:"CDP · Marca A", title:"2 · Ingesta del CRM (tabla fuente)", html:`
   <h2><span class="num">2</span>Ingesta del CRM de HubSpot</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Cargar el CRM de Tienda Ceba (Marca A) al esquema RAW.</div>
-  <p>El export de HubSpot de cada marca ya existe como tabla en su cuenta (~500.010 contactos). <b>No se cargan CSV</b>: la ingesta copia desde la tabla fuente al esquema RAW.</p>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Cargar el export crudo del CRM de Tienda Ceba (Marca A) al esquema RAW — tal como llega, con duplicados.</div>
+  <p>El <b>momento cero</b> de la Marca A es un export crudo de HubSpot (~512.010 filas) que incluye <b>~12.000 contactos duplicados</b> (clientes que se registraron más de una vez). Se copia tal cual a RAW; la limpieza viene en la Parte 3.</p>
   <ul>
-    <li>Cuenta A (Tienda Ceba): <code class="inl">HAVAS_CEBA_DEMO.PUBLIC.TIENDA_CEBA</code></li>
-    <li>Cuenta B (Padre de Mascotas): <code class="inl">HAVAS_PADRE_DEMO.PUBLIC.PADRE_DE_MASCOTAS</code></li>
+    <li>Tabla fuente (Cuenta A): <code class="inl">HAVAS_CEBA_DEMO.PUBLIC.TIENDA_CEBA_CRUDO</code></li>
   </ul>
-  ${prompt("Prompt CoCo — Cuenta A","Copia HAVAS_CEBA_DEMO.PUBLIC.TIENDA_CEBA a TIENDA_CEBA_CDP.RAW.HUBSPOT_CONTACTS con CREATE OR REPLACE TABLE ... AS SELECT *. Luego describe la tabla: lista columnas y tipos, cuenta filas y muéstrame 5 filas. Identifica identificadores (CORREO, TELEFONO, CEDULA, CONTACT_ID) y atributos (CIUDAD, ESTADO_LEAD, FECHA_CREACION). Resume calidad (nulos, duplicados de email).")}
-  <div class="res-line"><span class="pill res">RESULTADO</span>TIENDA_CEBA_CDP.RAW.HUBSPOT_CONTACTS poblada (500.010 filas) + mapa de columnas. <i>La Marca B carga su CRM en su propio paso (antes del Clean Room).</i></div>
-  <div class="gotcha"><b>Gotcha:</b> las columnas ya vienen en SNAKE_CASE; la normalización (email en minúscula, teléfono solo dígitos, dedup por email, parseo de FECHA_CREACION con <code class="inl">DD/MM/YYYY HH24:MI</code>) se hace en la Parte 3.</div>
+  ${prompt("Prompt CoCo — Cuenta A","Copia HAVAS_CEBA_DEMO.PUBLIC.TIENDA_CEBA_CRUDO a TIENDA_CEBA_CDP.RAW.HUBSPOT_CONTACTS con CREATE OR REPLACE TABLE ... AS SELECT *. Luego perfila la tabla: cuenta filas totales, correos únicos y cuántos correos aparecen más de una vez (duplicados). Muéstrame un ejemplo de un correo duplicado con sus dos registros (CONTACT_ID, ESTADO_LEAD, FECHA_CREACION).")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>RAW.HUBSPOT_CONTACTS poblada con ~512.010 filas crudas (~12.000 correos duplicados). <i>La Marca B ya llega lista — no se carga aquí.</i></div>
+  <div class="gotcha"><b>Gotcha:</b> las columnas ya vienen en SNAKE_CASE. La normalización (email minúscula/trim, teléfono solo dígitos, parseo de FECHA_CREACION con <code class="inl">DD/MM/YYYY HH24:MI</code>) y la deduplicación se hacen en la Parte 3.</div>
  `},
  {id:"p3", grp:"CDP · Marca A", title:"3 · Customer 360", html:`
   <h2><span class="num">3</span>Customer 360</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Una fila limpia por cliente, deduplicada.</div>
-  <div class="biz"><span class="lbl">PARA NEGOCIO</span>Una sola ficha por cliente, sin duplicados: la base para hablarle a la persona correcta una sola vez.</div>
-  ${prompt("Prompt CoCo","Sobre RAW.HUBSPOT_CONTACTS crea la tabla limpia GOLD.CUSTOMER_360:\n- email en minúscula y trim; teléfono solo dígitos; nombre = NOMBRE || ' ' || APELLIDOS\n- una fila por cliente, deduplicando por email (conserva el registro más reciente por FECHA_CREACION, parseada con DD/MM/YYYY HH24:MI)\n- columnas: customer_id (CONTACT_ID), cedula, email, telefono, nombre, genero, ciudad, lifecycle_stage (ESTADO_LEAD), tipo_cliente, mascota, consent_marketing (= ESTADO_MARKETING = 'Contacto de marketing'), fecha_creacion\nMaterialízala como tabla GOLD.CUSTOMER_360 y dime el conteo final de clientes únicos.")}
-  <div class="res-line"><span class="pill res">RESULTADO</span>GOLD.CUSTOMER_360 deduplicada con su conteo.</div>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>De export crudo a una ficha limpia por cliente: normalizar y deduplicar.</div>
+  <div class="biz"><span class="lbl">PARA NEGOCIO</span>El mismo cliente puede venir duplicado en el CRM. El CDP lo unifica conservando el registro <b>más reciente</b>: el conteo baja de <b>512.010 filas crudas a 500.010 clientes únicos</b>, y cada cliente queda con su estado actualizado (p. ej. uno que ya pasó de Prospecto a Cliente).</div>
+  ${prompt("Prompt CoCo","Sobre RAW.HUBSPOT_CONTACTS crea la tabla limpia GOLD.CUSTOMER_360:\n- email en minúscula y trim; teléfono solo dígitos; nombre = NOMBRE || ' ' || APELLIDOS\n- una fila por cliente, deduplicando por email (conserva el registro más reciente por FECHA_CREACION, parseada con DD/MM/YYYY HH24:MI)\n- columnas: customer_id (CONTACT_ID), cedula, email, telefono, nombre, genero, ciudad, lifecycle_stage (ESTADO_LEAD), tipo_cliente, mascota, consent_marketing (= ESTADO_MARKETING = 'Contacto de marketing'), fecha_creacion\nMaterialízala como tabla GOLD.CUSTOMER_360. Repórtame filas crudas vs clientes únicos finales y un ejemplo de un cliente cuyo duplicado fue resuelto (quedó con el estado más reciente).")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>GOLD.CUSTOMER_360 = <b>500.010</b> clientes únicos (de 512.010 crudas) — ~12.000 duplicados resueltos conservando el registro más reciente.</div>
  `},
  {id:"p4", grp:"CDP · Marca A", title:"4 · Enriquecimiento sintético", html:`
   <h2><span class="num">4</span>Enriquecimiento sintético de comportamiento</h2>
@@ -253,13 +276,13 @@ const parts = [
   <div class="res-line"><span class="pill res">RESULTADO</span>PII enmascarada + consentimiento aplicado por fila.</div>
   <div class="gotcha"><b>Gotcha:</b> la sesión usa SECONDARY_ROLES=ALL; si el rol admin está concedido, las políticas parecen no aplicar. Valida con <code class="inl">USE SECONDARY ROLES NONE</code>.</div>
  `},
- {id:"mb", grp:"Clean Room", title:"Marca B — preparación mínima", html:`
-  <h2>Marca B — preparación mínima</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>La marca socia (Padre de Mascotas) solo necesita 3 pasos para colaborar — sin montar un CDP completo.</div>
-  <div class="biz"><span class="lbl">PARA NEGOCIO</span>El socio no replica todo el CDP: basta con que prepare su lista de clientes en formato seguro (hasheada) para encontrarse con la Marca A en el clean room.</div>
-  ${prompt("Prompt CoCo — Marca B (todo en uno)","En la Cuenta B (PADRE_MASCOTAS_CDP): 1) crea la base y esquemas RAW, GOLD, GOBIERNO; 2) copia HAVAS_PADRE_DEMO.PUBLIC.PADRE_DE_MASCOTAS a RAW.HUBSPOT_CONTACTS; 3) crea GOLD.CUSTOMER_360 limpia (email minúscula/trim, dedup por email); 4) crea GOBIERNO.AUDIENCIA_CLEANROOM con SHA2(email) AS HASHED_EMAIL + CITY + flag de consentimiento, sin PII en claro. Dame el conteo final.")}
-  <div class="res-line"><span class="pill res">RESULTADO</span>Marca B lista para el clean room con su audiencia hasheada — sin eventos, modelo ni scores.</div>
-  <div class="gotcha"><b>Por qué mínima:</b> el overlap por tier usa el tier de la <b>Marca A</b>; el de B no se usa. Por eso B no necesita enriquecimiento ni modelo de propensión — se evita duplicar todo el CDP.</div>
+ {id:"mb", grp:"Clean Room", title:"Marca B — datos listos", html:`
+  <h2>Marca B — datos listos para el Clean Room</h2>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>La marca socia (Padre de Mascotas) <b>ya llega lista</b>: su audiencia hasheada está pre-provisionada. Aquí solo verificamos que está disponible para integrarla.</div>
+  <div class="biz"><span class="lbl">PARA NEGOCIO</span>El socio no replica todo el CDP ni hace trabajo en vivo: ya tiene su lista de clientes en formato seguro (cifrada) lista para encontrarse con la Marca A en el clean room. Así mostramos el CDP a fondo en una sola cuenta (A) y B solo aporta sus datos.</div>
+  ${prompt("Prompt CoCo — verificar (Cuenta B)","En la Cuenta B confirma que GOBIERNO.AUDIENCIA_CLEANROOM ya existe y está lista: cuenta filas y HASHED_EMAIL distintos (debe dar 500.010) y muéstrame 3 filas (HASHED_EMAIL, CITY, CONSENT_MARKETING) para confirmar que NO hay PII en claro.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>Marca B confirmada lista: audiencia hasheada de 500.010 (sin PII), persistente entre corridas — solo falta integrarla en el Clean Room (Parte 10).</div>
+  <div class="gotcha"><b>Por qué pre-lista y mínima:</b> el overlap por tier usa el tier de la <b>Marca A</b>; el de B no se usa. B se prepara una sola vez (RAW → CUSTOMER_360 → audiencia hasheada) y queda persistente; no necesita eventos, modelo ni scores. Se evita duplicar el CDP en cada cuenta.</div>
  `},
  {id:"p11", grp:"Clean Room", title:"10 · Data Clean Room cross-account", html:`
   <h2><span class="num">10</span>Data Clean Room cross-account</h2>
@@ -290,9 +313,9 @@ const parts = [
  `},
  {id:"p13", grp:"Cierre", title:"12 · Cleanup", html:`
   <h2><span class="num">12</span>Cleanup</h2>
-  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Apagar consumo al terminar el HOL.</div>
-  ${prompt("Prompt CoCo","Suspende y elimina los recursos de la demo: ALTER SERVICE ... SUSPEND y DROP SERVICE CDP_APP_SERVICE; DROP COMPUTE POOL CDP_POOL; DROP IMAGE REPOSITORY IMAGES; en cada cuenta, deja la colaboración del clean room (leave/teardown vía data-cleanrooms) y, si fue desechable, DROP DATABASE TIENDA_CEBA_CDP / PADRE_MASCOTAS_CDP. Confírmame qué se va a borrar antes de ejecutar.")}
-  <div class="res-line"><span class="pill res">RESULTADO</span>Servicios, compute pool y colaboración eliminados; sin consumo residual.</div>
+  <div class="obj-line"><span class="pill obj">OBJETIVO</span>Apagar consumo al terminar la demo, dejando la Marca B lista para la próxima corrida.</div>
+  ${prompt("Prompt CoCo","Limpia SOLO la Marca A y el clean room: ALTER SERVICE ... SUSPEND y DROP SERVICE CDP_APP_SERVICE; DROP COMPUTE POOL CDP_POOL; DROP IMAGE REPOSITORY TIENDA_CEBA_CDP.APP.IMAGES; desmonta la colaboración del clean room (teardown en A / leave en B vía data-cleanrooms); y DROP DATABASE TIENDA_CEBA_CDP. NO borres PADRE_MASCOTAS_CDP ni su audiencia (la Marca B debe quedar lista). Confírmame qué se va a borrar antes de ejecutar.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>Servicio, compute pool, repo y base de A eliminados + colaboración desmontada; sin consumo residual. <b>La Marca B (audiencia hasheada) permanece lista</b> para la siguiente corrida.</div>
  `},
  {id:"narr", grp:"Cierre", title:"Narrativa de presentación", html:`
   <h2>Guion de presentación (narrativa)</h2>
