@@ -124,12 +124,12 @@ const parts = [
   <ul>
     <li>Dos cuentas Snowflake con <code class="inl">ACCOUNTADMIN</code>:
       <ul>
-        <li><b>Cuenta A</b> — Tienda Ceba · locator <code class="inl">HQB73140</code> · <code class="inl">AWS_US_WEST_2</code></li>
-        <li><b>Cuenta B</b> — Padre de Mascotas · locator <code class="inl">UHB57140</code></li>
+        <li><b>Cuenta A</b> — Tienda Ceba · locator <code class="inl">HQB73140</code> · <code class="inl">AWS_US_WEST_2</code> · conexión CoCo <code class="inl">demo_account_aws</code></li>
+        <li><b>Cuenta B</b> — Padre de Mascotas · locator <code class="inl">UHB57140</code> · conexión CoCo <code class="inl">demo_account_aws_2</code></li>
       </ul>
     </li>
     <li>Data Clean Rooms instalado en ambas (<code class="inl">SAMOOHA_BY_SNOWFLAKE_LOCAL_DB</code>).</li>
-    <li>snow CLI, Docker y login de Google para los CSV. <i>El warehouse dedicado de la demo se crea en la Parte 1 — no se reutiliza ninguno existente.</i></li>
+    <li>snow CLI y Docker. Los CRM de cada marca ya existen como tablas (Parte 2) — no se cargan CSV. <i>El warehouse dedicado de la demo se crea en la Parte 1 — no se reutiliza ninguno existente.</i></li>
   </ul>
   <h3>Arquitectura y stack</h3>
   <ul>
@@ -155,25 +155,18 @@ const parts = [
   <p><span class="pill gui">GUI</span>Snowsight → Data → + Database.</p>
   <div class="res-line"><span class="pill res">RESULTADO</span>Warehouse <code class="inl">HOL_MASCOTAS_WH</code> activo y ambas bases con sus 7 esquemas, en cada cuenta.</div>
  `},
- {id:"p2", grp:"CDP por marca", title:"2 · Ingesta de los CSV de HubSpot", html:`
-  <h2><span class="num">2</span>Ingesta de los CSV de HubSpot</h2>
+ {id:"p2", grp:"CDP por marca", title:"2 · Ingesta del CRM (tabla fuente)", html:`
+  <h2><span class="num">2</span>Ingesta del CRM de HubSpot</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Cargar el CRM de cada marca al esquema RAW.</div>
-  <h3>Descarga (login Google)</h3>
+  <p>El export de HubSpot de cada marca ya existe como tabla en su cuenta (~500.010 contactos). <b>No se cargan CSV</b>: la ingesta copia desde la tabla fuente al esquema RAW.</p>
   <ul>
-    <li>Tienda Ceba: <a href="https://drive.google.com/file/d/1knpetUO-SMy6udX67iZh1-EB4V8ZNizZ/view" target="_blank">CSV</a></li>
-    <li>Padre de Mascotas: <a href="https://drive.google.com/file/d/1q8mfSLSK7dVuAzzKoWkHy3Cex6JDh2E2/view" target="_blank">CSV</a></li>
+    <li>Cuenta A (Tienda Ceba): <code class="inl">HAVAS_CEBA_DEMO.PUBLIC.TIENDA_CEBA</code></li>
+    <li>Cuenta B (Padre de Mascotas): <code class="inl">HAVAS_PADRE_DEMO.PUBLIC.PADRE_DE_MASCOTAS</code></li>
   </ul>
-  <p>Guárdalos en <code class="inl">/Users/jparrado/cdp-cleanroom-Havas/data/</code>.</p>
-  <h3><span class="pill gui">GUI</span>Carga (recomendado)</h3>
-  <ol>
-    <li>Snowsight (Cuenta A) → Data → Add Data → Load data into a Table.</li>
-    <li>CSV de Tienda Ceba → destino <code class="inl">TIENDA_CEBA_CDP.RAW</code> → tabla nueva <code class="inl">HUBSPOT_CONTACTS</code>.</li>
-    <li>Asistente: Header = first line, inferir tipos, On error = Continue. Carga.</li>
-    <li>Repite en Cuenta B → <code class="inl">PADRE_MASCOTAS_CDP.RAW.HUBSPOT_CONTACTS</code>.</li>
-  </ol>
-  ${prompt("Prompt CoCo — perfilado","Describe RAW.HUBSPOT_CONTACTS: lista columnas y tipos, cuenta filas, y muéstrame 5 filas de ejemplo. Identifica qué columnas sirven como identificadores (email, teléfono, nombre, record id) y cuáles como atributos (ciudad, lifecycle stage, fecha de creación). Resume hallazgos de calidad (nulos, duplicados de email).")}
-  <div class="res-line"><span class="pill res">RESULTADO</span>RAW.HUBSPOT_CONTACTS poblada en cada cuenta + mapa de columnas.</div>
-  <div class="gotcha"><b>Gotcha:</b> los exports HubSpot traen columnas con espacios/acentos; se normalizan a SNAKE_CASE en la Parte 3. No renombres a mano.</div>
+  ${prompt("Prompt CoCo — Cuenta A","Copia HAVAS_CEBA_DEMO.PUBLIC.TIENDA_CEBA a TIENDA_CEBA_CDP.RAW.HUBSPOT_CONTACTS con CREATE OR REPLACE TABLE ... AS SELECT *. Luego describe la tabla: lista columnas y tipos, cuenta filas y muéstrame 5 filas. Identifica identificadores (CORREO, TELEFONO, CEDULA, CONTACT_ID) y atributos (CIUDAD, ESTADO_LEAD, FECHA_CREACION). Resume calidad (nulos, duplicados de email).")}
+  ${prompt("Prompt CoCo — Cuenta B","Copia HAVAS_PADRE_DEMO.PUBLIC.PADRE_DE_MASCOTAS a PADRE_MASCOTAS_CDP.RAW.HUBSPOT_CONTACTS con CREATE OR REPLACE TABLE ... AS SELECT *. Confírmame el conteo de filas.")}
+  <div class="res-line"><span class="pill res">RESULTADO</span>RAW.HUBSPOT_CONTACTS poblada en cada cuenta (500.010 filas) + mapa de columnas.</div>
+  <div class="gotcha"><b>Gotcha:</b> las columnas ya vienen en SNAKE_CASE; la normalización (email en minúscula, teléfono solo dígitos, dedup por email, parseo de FECHA_CREACION con <code class="inl">DD/MM/YYYY HH24:MI</code>) se hace en la Parte 3.</div>
  `},
  {id:"p3", grp:"CDP por marca", title:"3 · Customer 360", html:`
   <h2><span class="num">3</span>Customer 360</h2>
@@ -234,13 +227,14 @@ const parts = [
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>A y B encuentran clientes en común y activan sin compartir PII. Usa el skill <code class="inl">data-cleanrooms</code> de CoCo.</div>
   ${prompt("Prompt CoCo — verificación + RBAC (A y B)","Verifica que Data Clean Rooms esté instalado (SHOW DATABASES LIKE 'SAMOOHA_BY_SNOWFLAKE_LOCAL_DB%'). Con ACCOUNTADMIN, otorga al rol CDP_ADMIN los privilegios de cuenta necesarios para crear/ver colaboraciones, registrar offerings y ejecutar análisis. Lista los privilegios otorgados.")}
   ${prompt("Prompt CoCo — audiencia NO-PII (cada cuenta)","Crea GOBIERNO.AUDIENCIA_CLEANROOM: una fila por cliente con SHA2(email_normalizado) AS match_key, más atributos NO identificables (tier de propensión, ciudad, lifecycle_stage, flag consentimiento). Sin email/teléfono/nombre en claro. Esta es la tabla que ofreceré al clean room.")}
-  ${prompt("Prompt CoCo — crear colaboración (Cuenta A)","Usando el skill data-cleanrooms, crea una colaboración cross-account llamada \"MASCOTAS_OVERLAP\" donde Cuenta A (esta) es Owner + Data Provider + Analysis Runner y Cuenta B (ORG.ACCOUNT_B) es Data Provider. Confírmame el spec antes de inicializar.")}
+  ${prompt("Prompt CoCo — crear colaboración (Cuenta A)","Usando el skill data-cleanrooms, crea una colaboración cross-account llamada \"MASCOTAS_OVERLAP\" donde Cuenta A (esta) es Owner + Data Provider + Analysis Runner y Cuenta B (SFSENORTHAMERICA.DEMO_JPARRADO2) es Data Provider. Confírmame el spec antes de inicializar.")}
   ${prompt("Prompt CoCo — unirse (Cuenta B)","Usando data-cleanrooms, revisa las invitaciones a colaboraciones y únete a \"MASCOTAS_OVERLAP\". Muéstrame el detalle antes de aceptar.")}
   ${prompt("Prompt CoCo — registrar offerings (A y B)","Usando data-cleanrooms, registra GOBIERNO.AUDIENCIA_CLEANROOM como data offering en \"MASCOTAS_OVERLAP\" con join key = match_key. En la cuenta runner (A), enlaza ambos offerings.")}
   ${prompt("Prompt CoCo — overlap + activación (Cuenta A runner)","Usando data-cleanrooms, ejecuta el template de \"standard audience overlap\" entre la audiencia de A y la de B sobre match_key, con tamaño mínimo de grupo (k-anonymity) = 25. Luego ejecuta \"audience overlap activation\" para exportar a A el segmento solapado de alta propensión (sin revelar identidades de B). Resume: nº de overlap, % sobre cada base, y lift de propensión del overlap vs base.")}
   <p><span class="pill gui">GUI</span>Snowsight → Data Clean Rooms → Create → añade Cuenta B como invitada.</p>
   <div class="res-line"><span class="pill res">RESULTADO</span>Overlap agregado + segmento activado, sin que A vea los emails de B. Mensaje: campañas co-marca sobre clientes compartidos de alta propensión sin que ninguna marca entregue su CRM.</div>
-  <div class="gotcha"><b>Gotchas:</b> si aparece ActivationDestinationsNotFoundException, configura activation_destinations en el runner. Si un procedimiento exige roles secundarios off: USE SECONDARY ROLES NONE antes y ALL después. Nunca consultes tablas internas de SAMOOHA; solo procedimientos CALL.</div>
+  <div class="gotcha"><b>Gotchas:</b> la columna de join se expone con el nombre del tipo (<code class="inl">hashed_email_sha256</code>), no <code class="inl">hashed_email</code> — el template de análisis debe referenciar ese nombre (registra uno custom con <code class="inl">REGISTER_TEMPLATE</code> + <code class="inl">ADD_TEMPLATE_REQUEST</code> y que B lo apruebe con <code class="inl">APPROVE_UPDATE_REQUEST</code>). Roles secundarios: <code class="inl">USE SECONDARY ROLES NONE</code> antes de REGISTER/JOIN/LINK y <code class="inl">ALL</code> después. La activación directa al runner puede fallar con <code class="inl">ACTIVATION_DATA_… does not exist</code> (borde de aprovisionamiento de auto-activación); el overlap agregado por tier es el entregable central. Nunca consultes tablas internas de SAMOOHA; solo procedimientos CALL.</div>
+  <div class="res-line"><span class="pill res">VALIDADO</span>Overlap real A∩B = <b>125.000</b> (25% de cada base) · por tier de A: Alto <b>13.355</b>, Medio 57.971, Bajo 53.674 — computado en el clean room sin compartir PII.</div>
  `},
  {id:"p12", grp:"App", title:"12 · App React + SPCS", html:`
   <h2><span class="num">12</span>App React + SPCS</h2>
