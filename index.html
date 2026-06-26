@@ -157,7 +157,7 @@ const parts = [
   <ul>
     <li>Ingesta: export crudo de la Tienda Ceba (tabla fuente) → CRM; Padre de Mascotas llega pre-lista.</li>
     <li>CDP: CRM → SILVER → EVENTS → GOLD → ML → CLEANROOM → APP.</li>
-    <li>IA: K-means (segmentación, en notebook), VECTOR_COSINE_SIMILARITY (lookalikes), Cortex Analyst + agente.</li>
+    <li>IA: K-means (segmentación, en notebook), VECTOR_L2_DISTANCE (lookalikes), Cortex Analyst + agente.</li>
     <li>Clean Room: Collaboration API (SAMOOHA) cross-account A↔B sobre HASHED_EMAIL (correo hasheado SHA-256).</li>
     <li>App: React + D3 (Vite) en SPCS con URL pública SSO.</li>
   </ul>
@@ -326,11 +326,11 @@ const parts = [
   <div class="res-line"><span class="pill res">RESULTADO</span>Notebook CDP_SEGMENTACION + columna GOLD.CUSTOMER_360.segmento poblada con 4 segmentos legibles + perfil por segmento.</div>
   <div class="gotcha"><b>Gotcha:</b> <b>estandariza antes</b> de K-means (si no, el ticket en pesos domina sobre el CTR). El notebook corre en su propio warehouse; para 500k filas usa <code class="inl">MEDIUM</code> y vuelve a <code class="inl">XSMALL</code>. K-means es no supervisado: no hay target ni fuga temporal.</div>
  `},
- {id:"p7", grp:"CDP · Tienda Ceba", title:"6 · Lookalikes (notebook · coseno)", html:`
-  <h2><span class="num">6</span>Lookalikes con ML (notebook · similitud coseno)</h2>
+ {id:"p7", grp:"CDP · Tienda Ceba", title:"6 · Lookalikes (notebook · vecino más cercano)", html:`
+  <h2><span class="num">6</span>Lookalikes con ML (notebook · vecino más cercano al centroide)</h2>
   <div class="obj-line"><span class="pill obj">OBJETIVO</span>Expandir un segmento semilla a los clientes <b>más parecidos</b> por similitud vectorial.</div>
   <div class="biz"><span class="lbl">PARA NEGOCIO</span>Partimos de un grupo valioso (p.ej. los <b>Campeones</b>) y encontramos clientes que se les parecen para ampliar el alcance de la campaña con buena tasa esperada.</div>
-  ${prompt("Prompt CoCo — crea el notebook de lookalikes","Crea un notebook de Snowflake Workspace (Python + Snowpark) llamado CDP_LOOKALIKES en TIENDA_CEBA_CDP.ML, con warehouse HOL_MASCOTAS_WH. Dentro del notebook:\n1) Construye ML.CUSTOMER_VECTOR: toma las features de SILVER.ML_FEATURES, conviértelas a z-scores y ensámblalas en una columna VECTOR(FLOAT,10) por cliente.\n2) Usa como semilla el segmento 'Campeones' de GOLD.CUSTOMER_360 y calcula su centroide (vector promedio).\n3) Con VECTOR_COSINE_SIMILARITY(vec, centroide) rankea a los clientes que NO son del segmento y materializa ML.LOOKALIKE_LAST con el top-N (p.ej. 5000) y su similitud.\n4) Reporta el lift: frecuencia/engagement medio del lookalike vs la base completa.")}
+  ${prompt("Prompt CoCo — crea el notebook de lookalikes","Crea un notebook de Snowflake Workspace (Python + Snowpark) llamado CDP_LOOKALIKES en TIENDA_CEBA_CDP.ML, con warehouse HOL_MASCOTAS_WH. Dentro del notebook:\n1) Construye ML.CUSTOMER_VECTOR: toma las features de SILVER.ML_FEATURES, conviértelas a z-scores y ensámblalas en una columna VECTOR(FLOAT,10) por cliente.\n2) Usa como semilla el segmento 'Campeones' de GOLD.CUSTOMER_360 y calcula su centroide (vector promedio).\n3) Con VECTOR_L2_DISTANCE(vec, centroide) rankea ascendente (los más cercanos) a los clientes que NO son del segmento y materializa ML.LOOKALIKE_LAST con el top-N (p.ej. 5000). NOTA: el coseno NO sirve aquí (ignora la magnitud y no captura el alto valor); usa distancia L2 al centroide.\n4) Reporta el lift: frecuencia/engagement medio del lookalike vs la base completa.")}
   <div class="res-line"><span class="pill res">RESULTADO</span>Notebook CDP_LOOKALIKES + ML.CUSTOMER_VECTOR + ML.LOOKALIKE_LAST (top-N parecidos) + lift vs base (~1.6×).</div>
   <div class="gotcha"><b>Gotcha:</b> <b>normaliza (z-score) antes</b> de la similitud y <b>excluye</b> a los miembros del segmento semilla del resultado. El centroide se calcula sobre los vectores de la semilla, no sobre la base.</div>
  `},
